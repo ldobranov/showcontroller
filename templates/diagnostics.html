@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="box">
+    <h2>Diagnostics</h2>
+    <p>UDP Target: <b>{{ cfg.touchdesigner.ip }}:{{ cfg.touchdesigner.port }}</b>
+      {% if td_online %}
+        <span class="ok">ONLINE</span>
+      {% else %}
+        <span class="danger">NO PING</span>
+      {% endif %}
+    </p>
+    <p class="muted">UDP may still work even when ping is blocked by a firewall. This is only a quick network check.</p>
+  </div>
+
+  <div class="box">
+    <h3>Config check</h3>
+    {% if issues %}
+      <ul>
+        {% for issue in issues %}
+          <li class="warn">{{ issue }}</li>
+        {% endfor %}
+      </ul>
+    {% else %}
+      <p class="ok">No obvious config issues.</p>
+    {% endif %}
+  </div>
+
+  <div class="box">
+    <h3>UDP Test</h3>
+    <form method="post" action="/diagnostics/send_udp">
+      <label>Message base</label>
+      <input name="message" value="20,1">
+      <label>Press/Release delay seconds</label>
+      <input name="delay" value="0.2">
+      <button type="submit" class="primary">Send press/release test</button>
+    </form>
+    <p class="muted">Sends <code>20,1</code>, waits for the configured delay, then sends <code>20,0</code>.</p>
+  </div>
+
+  <div class="box">
+    <h3>Input Tests</h3>
+    {% for inp in inputs %}
+      <div class="input-row" data-live-input-name="{{ inp.name }}">
+        <b>{{ inp.name }}</b>
+        <span class="pill">GPIO{{ inp.gpio }}</span>
+        <span class="pill">{{ inp.mode }}</span>
+        <span class="pill">trigger={{ inp.get('trigger', 'release') }}</span>
+        {% if inp.get('enabled', True) %}
+          <span class="ok">ENABLED</span>
+        {% else %}
+          <span class="muted">DISABLED</span>
+        {% endif %}
+        <span class="live-status {% if inp.pressed %}ok{% else %}muted{% endif %}">{{ "PRESSED" if inp.pressed else "RELEASED" }}</span>
+        <span class="live-event">last: {{ inp.get('last_event', '-') }} {{ inp.get('last_event_time', '') }}</span>
+        <span class="live-count">press: {{ inp.get('press_count', 0) }} / release: {{ inp.get('release_count', 0) }}</span>
+
+        <form method="post" action="/diagnostics/fire_input" style="display:inline">
+          <input type="hidden" name="input_name" value="{{ inp.name }}">
+          <button type="submit">Fire input</button>
+        </form>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="box">
+    <h3>Recent diagnostic log</h3>
+    <pre>{% for l in logs %}{{ l }}
+{% endfor %}</pre>
+  </div>
+{% endblock %}

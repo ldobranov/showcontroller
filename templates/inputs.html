@@ -1,0 +1,202 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="box">
+    <h2>Inputs</h2>
+
+    {% for inp in inputs %}
+      <div class="input-row" data-live-input-name="{{ inp.name }}">
+        <b>{{ inp.name }}</b>
+        <span class="pill">GPIO{{ inp.gpio }}</span>
+        <span class="pill">{{ inp.mode }}</span>
+        <span class="pill">trigger={{ inp.get('trigger', 'release') }}</span>
+        <span class="pill">debounce={{ inp.get('debounce_ms', 250) }}ms</span>
+        <span class="live-status {% if inp.pressed %}ok{% else %}muted{% endif %}">{{ "PRESSED" if inp.pressed else "RELEASED" }}</span>
+        <span class="live-event">last: {{ inp.get('last_event', '-') }} {{ inp.get('last_event_time', '') }}</span>
+        <span class="live-count">press: {{ inp.get('press_count', 0) }} / release: {{ inp.get('release_count', 0) }}</span>
+
+        <div class="actions">
+          <form method="post" action="/next" style="display:inline">
+            <input type="hidden" name="input_name" value="{{ inp.name }}">
+            <button type="submit" class="primary">TRIGGER</button>
+          </form>
+          <form method="post" action="/reset" style="display:inline">
+            <input type="hidden" name="input_name" value="{{ inp.name }}">
+            <button type="submit">RESET</button>
+          </form>
+        </div>
+
+        {% if inp.mode == "sequence" and inp.get('sequence') %}
+          <p>Sequence test:</p>
+          <div class="sequence-buttons">
+          {% for msg in inp.get('sequence') %}
+            <form method="post" action="/send">
+              <input type="hidden" name="message" value="{{ msg }}">
+              <button type="submit">{{ msg }}</button>
+            </form>
+          {% endfor %}
+          </div>
+        {% elif inp.get('message') %}
+          <p>Message: <code>{{ inp.get('message') }}</code></p>
+        {% endif %}
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="box">
+    <h2>Edit Inputs</h2>
+
+    <form method="post" action="/inputs/save" id="inputsForm" onsubmit="reindexInputs()">
+      <div id="inputsList">
+        {% for inp in inputs %}
+          <div class="input-row">
+            <label>
+              <input class="inline-checkbox js-enabled" type="checkbox" name="enabled" value="{{ loop.index0 }}"
+                     {% if inp.get('enabled', True) %}checked{% endif %}>
+              Enabled
+            </label>
+
+            <div class="grid">
+              <div>
+                <label>Name</label>
+                <input name="input_name" value="{{ inp.name }}">
+              </div>
+              <div>
+                <label>GPIO</label>
+                <input name="gpio" value="{{ inp.gpio }}">
+              </div>
+              <div>
+                <label>Mode</label>
+                <select name="mode">
+                  <option value="single" {% if inp.mode == "single" %}selected{% endif %}>single</option>
+                  <option value="sequence" {% if inp.mode == "sequence" %}selected{% endif %}>sequence</option>
+                </select>
+              </div>
+            </div>
+
+            <label>
+              <input class="inline-checkbox js-pullup" type="checkbox" name="pullup" value="{{ loop.index0 }}"
+                     {% if inp.get('pullup', True) %}checked{% endif %}>
+              Pullup
+            </label>
+
+            <label>Trigger</label>
+            <select name="trigger">
+              <option value="press" {% if inp.get('trigger', 'release') == "press" %}selected{% endif %}>press</option>
+              <option value="release" {% if inp.get('trigger', 'release') == "release" %}selected{% endif %}>release</option>
+            </select>
+
+            <details class="advanced">
+              <summary>Advanced</summary>
+              <div class="grid">
+                <div>
+                  <label>Debounce ms</label>
+                  <input name="debounce_ms" value="{{ inp.get('debounce_ms', 250) }}">
+                </div>
+                <div>
+                  <label>Press/release delay ms</label>
+                  <input name="fire_delay_ms" value="{{ inp.get('fire_delay_ms', 200) }}">
+                </div>
+                <div>
+                  <label>Hold ms</label>
+                  <input name="hold_ms" value="{{ inp.get('hold_ms', 0) }}">
+                </div>
+              </div>
+            </details>
+
+            <label>Single message</label>
+            <input name="message" value="{{ inp.get('message', '') }}">
+
+            <label>Sequence</label>
+            <textarea name="sequence">{% if inp.get('sequence') %}{% for msg in inp.get('sequence') %}{{ msg }}
+{% endfor %}{% endif %}</textarea>
+
+            <button type="button" onclick="this.closest('.input-row').remove(); reindexInputs();">DELETE</button>
+          </div>
+        {% endfor %}
+      </div>
+
+      <button type="button" onclick="addInput()">ADD INPUT</button>
+      <button type="submit" class="primary">SAVE INPUTS</button>
+    </form>
+  </div>
+
+  <script>
+    function addInput() {
+      const div = document.createElement('div');
+      div.className = 'input-row';
+      div.innerHTML = `
+        <label>
+          <input class="inline-checkbox js-enabled" type="checkbox" name="enabled" value="0" checked>
+          Enabled
+        </label>
+
+        <div class="grid">
+          <div>
+            <label>Name</label>
+            <input name="input_name" value="New Button">
+          </div>
+          <div>
+            <label>GPIO</label>
+            <input name="gpio" value="17">
+          </div>
+          <div>
+            <label>Mode</label>
+            <select name="mode">
+              <option value="single">single</option>
+              <option value="sequence">sequence</option>
+            </select>
+          </div>
+        </div>
+
+        <label>
+          <input class="inline-checkbox js-pullup" type="checkbox" name="pullup" value="0" checked>
+          Pullup
+        </label>
+
+        <label>Trigger</label>
+        <select name="trigger">
+          <option value="press">press</option>
+          <option value="release" selected>release</option>
+        </select>
+
+        <details class="advanced">
+          <summary>Advanced</summary>
+          <div class="grid">
+            <div>
+              <label>Debounce ms</label>
+              <input name="debounce_ms" value="250">
+            </div>
+            <div>
+              <label>Press/release delay ms</label>
+              <input name="fire_delay_ms" value="200">
+            </div>
+            <div>
+              <label>Hold ms</label>
+              <input name="hold_ms" value="0">
+            </div>
+          </div>
+        </details>
+
+        <label>Single message</label>
+        <input name="message" value="1,1">
+
+        <label>Sequence</label>
+        <textarea name="sequence"></textarea>
+
+        <button type="button" onclick="this.closest('.input-row').remove(); reindexInputs();">DELETE</button>
+      `;
+      document.getElementById('inputsList').appendChild(div);
+      reindexInputs();
+    }
+
+    function reindexInputs() {
+      const rows = document.querySelectorAll('#inputsList .input-row');
+      rows.forEach((row, index) => {
+        const enabled = row.querySelector('.js-enabled');
+        const pullup = row.querySelector('.js-pullup');
+        if (enabled) enabled.value = index;
+        if (pullup) pullup.value = index;
+      });
+    }
+  </script>
+{% endblock %}

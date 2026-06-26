@@ -1,0 +1,33 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="box">
+    <h2>System</h2>
+    <p>Raspberry IP: <b>{{ ip }}</b></p>
+    <p>UDP Target: <b>{{ cfg.touchdesigner.ip }}:{{ cfg.touchdesigner.port }}</b></p>
+    <p class="muted">Reload Inputs applies GPIO configuration changes without restarting the service.</p>
+
+    <form method="post" action="/services/restart/web" style="display:inline">
+      <button type="submit">Restart WEB</button>
+    </form>
+    <form method="post" action="/system/reload-inputs" style="display:inline">
+      <button type="submit" class="primary">Reload Inputs</button>
+    </form>
+    <form method="post" action="/services/restart/gpio" style="display:inline">
+      <button type="submit">Restart GPIO</button>
+    </form>
+    <form method="post" action="/system/reboot" style="display:inline">
+      <button type="submit">Reboot</button>
+    </form>
+  </div>
+
+  <div class="box">
+    <h2>Backup / Restore</h2>
+    <a href="/backup/config"><button type="button">Download Config</button></a>
+
+    <form method="post" action="/restore/config" enctype="multipart/form-data">
+      <label>Restore config.json</label>
+      <input type="file" name="config_file" accept=".json">
+      <button type="submit">Restore Config</button>
+    </form>
+  </div>
+{% endblock %}

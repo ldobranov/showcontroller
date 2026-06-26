@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block content %}
+  <div class="box">
+    <h2>Dashboard</h2>
+    <p>UDP Target: <b>{{ cfg.touchdesigner.ip }}:{{ cfg.touchdesigner.port }}</b></p>
+    <p>Raspberry IP: <b>{{ ip }}</b></p>
+    <p>Current first input: <code>{{ current }}</code></p>
+  </div>
+
+  <div class="box">
+    <h3>Inputs status</h3>
+    {% for inp in inputs %}
+      <div class="input-row" data-live-input-name="{{ inp.name }}">
+        <b>{{ inp.name }}</b>
+        <span class="pill">GPIO{{ inp.gpio }}</span>
+        <span class="pill">{{ inp.mode }}</span>
+        <span class="pill">trigger={{ inp.get('trigger', 'release') }}</span>
+        <span class="live-status {% if inp.pressed %}ok{% else %}muted{% endif %}">{{ "PRESSED" if inp.pressed else "RELEASED" }}</span>
+        <span class="live-event">last: {{ inp.get('last_event', '-') }} {{ inp.get('last_event_time', '') }}</span>
+        <span class="live-count">press: {{ inp.get('press_count', 0) }} / release: {{ inp.get('release_count', 0) }}</span>
+
+        <div class="actions">
+          <form method="post" action="/next" style="display:inline">
+            <input type="hidden" name="input_name" value="{{ inp.name }}">
+            <button type="submit" class="primary">TRIGGER</button>
+          </form>
+          <form method="post" action="/reset" style="display:inline">
+            <input type="hidden" name="input_name" value="{{ inp.name }}">
+            <button type="submit">RESET</button>
+          </form>
+        </div>
+      </div>
+    {% endfor %}
+  </div>
+
+  <div class="box">
+    <h3>Recent log</h3>
+    <pre>{% for l in logs %}{{ l }}
+{% endfor %}</pre>
+  </div>
+{% endblock %}

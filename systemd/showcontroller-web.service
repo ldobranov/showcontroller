@@ -1,0 +1,15 @@
+[Unit]
+Description=ShowController Web Interface
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=raspberry
+WorkingDirectory=/opt/showcontroller
+ExecStart=/usr/bin/python3 /opt/showcontroller/app.py
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
