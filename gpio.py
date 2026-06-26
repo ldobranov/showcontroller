@@ -6,7 +6,7 @@ from gpiozero import Button
 import engine
 from config import load_config
 from logger import log
-from state import set_input_event
+from state import set_input_event, set_input_pressed
 
 buttons = []
 CONFIG_FILE = "/opt/showcontroller/config.json"
@@ -74,20 +74,28 @@ def make_event_handler(input_cfg, event):
     def handler():
         name = input_cfg.get("name", "unknown")
         gpio = input_cfg.get("gpio", "?")
-        configured_trigger = input_cfg.get("trigger", "release")
+        fire_mode = input_cfg.get("fire_mode", "timed")
+        trigger = input_cfg.get("trigger", "release")
 
         if event == "press":
-            set_input_event(name, True, "press")
+            set_input_pressed(name, True)
             log(f"GPIO PRESS {name} GPIO{gpio}")
+
+            if fire_mode == "real_release":
+                engine.fire_input_press(input_cfg)
+            elif trigger == "press":
+                engine.fire_input(input_cfg)
+
         else:
-            set_input_event(name, False, "release")
+            set_input_pressed(name, False)
             log(f"GPIO RELEASE {name} GPIO{gpio}")
 
-        if event == configured_trigger:
-            engine.fire_input(input_cfg)
+            if fire_mode == "real_release":
+                engine.fire_input_release(input_cfg)
+            elif trigger == "release":
+                engine.fire_input(input_cfg)
 
     return handler
-
 
 def run_gpio():
     setup_gpio()

@@ -93,6 +93,15 @@
                   <input name="debounce_ms" value="{{ inp.get('debounce_ms', 250) }}">
                 </div>
                 <div>
+                <label>Fire mode</label>
+                  <select name="fire_mode">
+                    <option value="timed" {% if inp.get('fire_mode', 'timed') == 'timed' %}selected{% endif %}>
+                      Timed press/release
+                    </option>
+                    <option value="real_release" {% if inp.get('fire_mode', 'timed') == 'real_release' %}selected{% endif %}>
+                      Real release
+                    </option>
+                  </select>
                   <label>Press/release delay ms</label>
                   <input name="fire_delay_ms" value="{{ inp.get('fire_delay_ms', 200) }}">
                 </div>
@@ -167,6 +176,11 @@
               <input name="debounce_ms" value="250">
             </div>
             <div>
+              <label>Fire mode</label>
+                <select name="fire_mode">
+                  <option value="timed" selected>Timed press/release</option>
+                  <option value="real_release">Real release</option>
+                </select>
               <label>Press/release delay ms</label>
               <input name="fire_delay_ms" value="200">
             </div>

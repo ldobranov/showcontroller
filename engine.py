@@ -92,6 +92,82 @@ def send_press_release(msg, delay=DEFAULT_PRESS_RELEASE_DELAY):
     time.sleep(delay)
     send_udp(base + ",0")
 
+def get_current_input_message(input_cfg):
+    if not input_cfg:
+        return ""
+
+    mode = input_cfg.get("mode", "single")
+
+    if mode == "sequence":
+        seq = input_cfg.get("sequence", [])
+        if not seq:
+            return ""
+
+        name = input_cfg["name"]
+        idx = get_input_index(name) % len(seq)
+        return seq[idx]
+
+    return input_cfg.get("message", "").strip()
+
+
+def send_press_only(msg):
+    msg = (msg or "").strip()
+    if not msg:
+        return
+
+    if "," in msg:
+        base = msg.rsplit(",", 1)[0]
+        send_udp(base + ",1")
+    else:
+        send_udp(msg)
+
+
+def send_release_only(msg):
+    msg = (msg or "").strip()
+    if not msg:
+        return
+
+    if "," in msg:
+        base = msg.rsplit(",", 1)[0]
+        send_udp(base + ",0")
+    else:
+        send_udp(msg)
+
+
+def advance_input(input_cfg):
+    if not input_cfg:
+        return
+
+    if input_cfg.get("mode", "single") == "sequence":
+        seq = input_cfg.get("sequence", [])
+        if not seq:
+            return
+
+        name = input_cfg["name"]
+        idx = get_input_index(name) % len(seq)
+        next_idx = (idx + 1) % len(seq)
+        set_input_index(name, next_idx)
+        log(f"ADVANCE {name} next_index={next_idx}")
+
+
+def fire_input_press(input_cfg):
+    if not input_cfg or not input_cfg.get("enabled", True):
+        return
+
+    msg = get_current_input_message(input_cfg)
+    send_press_only(msg)
+    log(f"PRESS FIRE {input_cfg.get('name', 'unknown')} -> {msg}")
+
+
+def fire_input_release(input_cfg):
+    if not input_cfg or not input_cfg.get("enabled", True):
+        return
+
+    msg = get_current_input_message(input_cfg)
+    send_release_only(msg)
+    log(f"RELEASE FIRE {input_cfg.get('name', 'unknown')} -> {msg}")
+    advance_input(input_cfg)
+
 
 def fire_input(input_cfg):
     """Single entry point for firing an input from Web, GPIO, API, MQTT, etc."""
@@ -169,9 +245,11 @@ def save_inputs_from_form(form):
     modes = form.getlist("mode")
     messages = form.getlist("message")
     sequences = form.getlist("sequence")
+
     debounce_ms_list = form.getlist("debounce_ms")
     fire_delay_ms_list = form.getlist("fire_delay_ms")
     hold_ms_list = form.getlist("hold_ms")
+    fire_modes = form.getlist("fire_mode")
 
     inputs = []
 
@@ -183,9 +261,11 @@ def save_inputs_from_form(form):
         gpio = int(gpios[i].strip())
         mode = modes[i].strip()
         trigger = triggers[i].strip()
+
         debounce_ms = int((debounce_ms_list[i].strip() if i < len(debounce_ms_list) else "250") or 250)
         fire_delay_ms = int((fire_delay_ms_list[i].strip() if i < len(fire_delay_ms_list) else "200") or 200)
         hold_ms = int((hold_ms_list[i].strip() if i < len(hold_ms_list) else "0") or 0)
+        fire_mode = (fire_modes[i].strip() if i < len(fire_modes) else "timed") or "timed"
 
         item = {
             "enabled": str(i) in enabled_list,
@@ -196,6 +276,7 @@ def save_inputs_from_form(form):
             "debounce_ms": debounce_ms,
             "fire_delay_ms": fire_delay_ms,
             "hold_ms": hold_ms,
+            "fire_mode": fire_mode,
             "mode": mode,
         }
 
@@ -205,8 +286,14 @@ def save_inputs_from_form(form):
                 for line in sequences[i].splitlines()
                 if line.strip()
             ]
+            item["message"] = messages[i].strip() if i < len(messages) else ""
         else:
-            item["message"] = messages[i].strip()
+            item["message"] = messages[i].strip() if i < len(messages) else ""
+            item["sequence"] = [
+                line.strip()
+                for line in sequences[i].splitlines()
+                if line.strip()
+            ] if i < len(sequences) else []
 
         inputs.append(item)
 
