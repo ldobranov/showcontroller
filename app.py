@@ -1,8 +1,12 @@
 import json
+import os
 import subprocess
 import time
+import socket
+from pathlib import Path
 
 from flask import Flask, Response, jsonify, redirect, render_template, request, send_file, session, url_for
+from werkzeug.utils import secure_filename
 
 import auth
 import engine
@@ -12,6 +16,11 @@ from logger import clear_logs, get_logs, log
 
 app = Flask(__name__)
 app.secret_key = auth.get_secret_key()
+
+VIDEO_CONFIG = "/opt/showcontroller/config/video.json"
+VIDEO_MEDIA_DIR = "/home/raspberry/videos"
+VIDEO_MPV_SOCKET = "/tmp/showcontroller-mpv.sock"
+ALLOWED_VIDEO_EXT = {".mp4", ".jpg", ".jpeg"}
 
 
 @app.before_request
@@ -23,6 +32,173 @@ def require_login():
         return None
     return redirect(url_for("login", next=request.path))
 
+
+def video_default_config():
+    return {
+        "id": "oko1",
+        "name": "Око 1",
+        "gpio": 17,
+        "video": "/home/raspberry/videos/oko1.mp4",
+        "idle": "/home/raspberry/videos/idle.jpg",
+        "cec_enabled": False,
+    }
+
+
+def video_load_config():
+    if not os.path.exists(VIDEO_CONFIG):
+        return video_default_config()
+
+    with open(VIDEO_CONFIG, "r", encoding="utf-8") as f:
+        cfg = json.load(f)
+
+    default = video_default_config()
+    default.update(cfg)
+    return default
+
+
+def video_save_config(cfg):
+    os.makedirs(os.path.dirname(VIDEO_CONFIG), exist_ok=True)
+    with open(VIDEO_CONFIG, "w", encoding="utf-8") as f:
+        json.dump(cfg, f, ensure_ascii=False, indent=2)
+
+
+def video_media_files():
+    os.makedirs(VIDEO_MEDIA_DIR, exist_ok=True)
+    files = []
+
+    for p in sorted(Path(VIDEO_MEDIA_DIR).iterdir()):
+        if p.is_file() and p.suffix.lower() in ALLOWED_VIDEO_EXT:
+            files.append(str(p))
+
+    return files
+
+
+def restart_video_service():
+    subprocess.Popen(["sudo", "systemctl", "restart", "showcontroller-video-node.service"])
+
+def video_mpv_command(command):
+    try:
+        data = json.dumps(command) + "\n"
+        client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+        client.connect(VIDEO_MPV_SOCKET)
+        client.send(data.encode("utf-8"))
+        client.close()
+        return True
+    except Exception as e:
+        log(f"VIDEOS mpv IPC error: {e}")
+        return False
+
+
+def video_load_file(path):
+    if not path or not os.path.exists(path):
+        log(f"VIDEOS file not found: {path}")
+        return False
+
+    return video_mpv_command({
+        "command": ["loadfile", path, "replace"]
+    })
+
+
+@app.route("/videos")
+def videos_page():
+    return render_page(
+        "videos.html",
+        active_page="videos",
+        video_cfg=video_load_config(),
+        video_files=video_media_files(),
+    )
+
+
+@app.route("/videos/upload", methods=["POST"])
+def videos_upload():
+    file = request.files.get("media_file")
+
+    if not file or not file.filename:
+        return redirect("/videos")
+
+    filename = secure_filename(file.filename)
+    ext = Path(filename).suffix.lower()
+
+    if ext not in ALLOWED_VIDEO_EXT:
+        log(f"VIDEOS upload rejected: {filename}")
+        return redirect("/videos")
+
+    os.makedirs(VIDEO_MEDIA_DIR, exist_ok=True)
+    save_path = os.path.join(VIDEO_MEDIA_DIR, filename)
+    file.save(save_path)
+
+    log(f"VIDEOS uploaded: {save_path}")
+    return redirect("/videos")
+
+
+@app.route("/videos/save", methods=["POST"])
+def videos_save():
+    cfg = video_load_config()
+
+    cfg["id"] = request.form.get("id", cfg.get("id", "oko1")).strip()
+    cfg["name"] = request.form.get("name", cfg.get("name", "Око 1")).strip()
+    cfg["gpio"] = int(request.form.get("gpio", "17") or 17)
+    cfg["video"] = request.form.get("video", "").strip()
+    cfg["idle"] = request.form.get("idle", "").strip()
+    cfg["cec_enabled"] = request.form.get("cec_enabled") == "on"
+
+    video_save_config(cfg)
+    log("VIDEOS config saved")
+    restart_video_service()
+
+    return redirect("/videos")
+
+
+@app.route("/videos/restart", methods=["POST"])
+def videos_restart():
+    log("VIDEOS restart requested")
+    restart_video_service()
+    return redirect("/videos")
+
+
+@app.route("/videos/delete", methods=["POST"])
+def videos_delete():
+    path = request.form.get("path", "").strip()
+
+    if not path.startswith(VIDEO_MEDIA_DIR + "/"):
+        log(f"VIDEOS delete rejected: {path}")
+        return redirect("/videos")
+
+    try:
+        if os.path.exists(path):
+            os.remove(path)
+            log(f"VIDEOS deleted: {path}")
+    except Exception as e:
+        log(f"VIDEOS delete error: {e}")
+
+    return redirect("/videos")
+
+@app.route("/videos/play", methods=["POST"])
+def videos_play():
+    cfg = video_load_config()
+    video_load_file(cfg.get("video"))
+    return redirect("/videos")
+
+
+@app.route("/videos/idle", methods=["POST"])
+def videos_idle():
+    cfg = video_load_config()
+    video_load_file(cfg.get("idle"))
+    return redirect("/videos")
+
+
+@app.route("/videos/tv-on", methods=["POST"])
+def videos_tv_on():
+    log("VIDEOS TV ON requested")
+    subprocess.Popen('echo "on 0" | cec-client -s -d 1', shell=True)
+    return redirect("/videos")
+
+
+@app.route("/videos/tv-hdmi", methods=["POST"])
+def videos_tv_hdmi():
+    log("VIDEOS TV HDMI requested")
+    subprocess.Popen('echo "as" | cec-client -s -d 1', shell=True)
+    return redirect("/videos")
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
@@ -89,10 +265,11 @@ def get_status():
     return {
         "web": service_status("showcontroller-web"),
         "gpio": service_status("showcontroller-gpio"),
+        "video": service_status("showcontroller-video-node"),
         "logging": cfg.get("logging_enabled", True),
         "ip": get_ip(),
+        "node_mode": "video"
     }
-
 
 
 def ping_host(host):
@@ -182,6 +359,24 @@ def inputs_page():
 def settings():
     return render_page("settings.html", active_page="settings")
 
+@app.route("/system/mode/video", methods=["POST"])
+def system_mode_video():
+    log("SYSTEM mode -> VIDEO")
+
+    subprocess.run(["sudo", "systemctl", "disable", "--now", "showcontroller-gpio.service"])
+    subprocess.run(["sudo", "systemctl", "enable", "--now", "showcontroller-video-node.service"])
+
+    return redirect("/system")
+
+
+@app.route("/system/mode/gpio", methods=["POST"])
+def system_mode_gpio():
+    log("SYSTEM mode -> GPIO")
+
+    subprocess.run(["sudo", "systemctl", "disable", "--now", "showcontroller-video-node.service"])
+    subprocess.run(["sudo", "systemctl", "enable", "--now", "showcontroller-gpio.service"])
+
+    return redirect("/system")
 
 @app.route("/logs")
 def logs_page():
@@ -191,7 +386,6 @@ def logs_page():
 @app.route("/system")
 def system_page():
     return render_page("system.html", active_page="system")
-
 
 
 @app.route("/diagnostics")
@@ -227,14 +421,15 @@ def events_stream():
     )
 
 
-
 @app.route("/favicon.ico")
 def favicon():
     return ("", 204)
 
+
 @app.route("/api/routes")
 def api_routes():
     return jsonify(sorted(str(rule) for rule in app.url_map.iter_rules()))
+
 
 @app.route("/settings/save", methods=["POST"])
 def save_settings():
@@ -308,10 +503,14 @@ def reload_inputs():
 
 @app.route("/services/restart/<name>", methods=["POST"])
 def restart_service(name):
-    if name not in ["web", "gpio"]:
+    if name not in ["web", "gpio", "video-node"]:
         return redirect("/system")
 
-    service = f"showcontroller-{name}"
+    if name == "video-node":
+        service = "showcontroller-video-node"
+    else:
+        service = f"showcontroller-{name}"
+
     log(f"SERVICE restart requested: {service}")
     subprocess.Popen(["sudo", "systemctl", "restart", service])
     return redirect("/system")
@@ -322,8 +521,6 @@ def reboot_system():
     log("SYSTEM reboot requested")
     subprocess.Popen(["sudo", "reboot"])
     return redirect("/system")
-
-
 
 
 @app.route("/diagnostics/send_udp", methods=["POST"])

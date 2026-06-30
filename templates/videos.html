@@ -1,0 +1,106 @@
+{% extends "base.html" %}
+{% block content %}
+
+<h1>Videos</h1>
+
+<div class="card">
+  <h2>Video Node</h2>
+
+  <p><strong>ID:</strong> {{ video_cfg.id }}</p>
+  <p><strong>Name:</strong> {{ video_cfg.name }}</p>
+  <p><strong>Service:</strong> {{ status.video }}</p>
+
+  <form method="post" action="/videos/save">
+    <label>ID</label>
+    <input type="text" name="id" value="{{ video_cfg.id }}">
+
+    <label>Name</label>
+    <input type="text" name="name" value="{{ video_cfg.name }}">
+
+    <label>GPIO</label>
+    <input type="number" name="gpio" value="{{ video_cfg.gpio }}">
+
+    <label>Main video (.mp4)</label>
+    <select name="video">
+      {% for f in video_files %}
+        {% if f.lower().endswith(".mp4") %}
+          <option value="{{ f }}" {% if video_cfg.video == f %}selected{% endif %}>{{ f }}</option>
+        {% endif %}
+      {% endfor %}
+    </select>
+
+    <label>Idle (.jpg / .mp4)</label>
+    <select name="idle">
+      {% for f in video_files %}
+        {% if f.lower().endswith(".jpg") or f.lower().endswith(".jpeg") or f.lower().endswith(".mp4") %}
+          <option value="{{ f }}" {% if video_cfg.idle == f %}selected{% endif %}>{{ f }}</option>
+        {% endif %}
+      {% endfor %}
+    </select>
+
+    <label>
+      <input type="checkbox" name="cec_enabled" {% if video_cfg.cec_enabled %}checked{% endif %}>
+      HDMI CEC enabled
+    </label>
+
+    <button type="submit">Save and Restart Player</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Upload</h2>
+
+  <form method="post" action="/videos/upload" enctype="multipart/form-data">
+    <input type="file" name="media_file" accept=".mp4,.jpg,.jpeg">
+    <button type="submit">Upload</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>Files</h2>
+
+  {% for f in video_files %}
+    <div style="display:flex; justify-content:space-between; align-items:center; gap:12px; margin:8px 0;">
+      <code>{{ f }}</code>
+
+      <form method="post" action="/videos/delete" onsubmit="return confirm('Delete this file?');">
+        <input type="hidden" name="path" value="{{ f }}">
+        <button type="submit">Delete</button>
+      </form>
+    </div>
+  {% endfor %}
+</div>
+
+<div class="card">
+  <h2>Player</h2>
+
+<form method="post" action="/videos/play" style="display:inline;">
+  <button type="submit">Play Main</button>
+</form>
+
+<form method="post" action="/videos/idle" style="display:inline;">
+  <button type="submit">Show Idle</button>
+</form>
+
+<form method="post" action="/videos/restart" style="display:inline;">
+  <button type="submit">Restart Video Node</button>
+</form>
+
+  <form method="post" action="/videos/restart">
+    <button type="submit">Restart Video Node</button>
+  </form>
+</div>
+
+<div class="card">
+  <h2>TV</h2>
+
+  <form method="post" action="/videos/tv-on" style="display:inline;">
+    <button type="submit">TV On</button>
+  </form>
+
+  <form method="post" action="/videos/tv-hdmi" style="display:inline;">
+    <button type="submit">Select HDMI</button>
+  </form>
+</div>
+
+{% endblock %}

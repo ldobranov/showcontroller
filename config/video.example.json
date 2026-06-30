@@ -1,0 +1,8 @@
+{
+  "id": "oko1",
+  "name": "Око 1",
+  "gpio": 17,
+  "video": "/home/raspberry/videos/sample-10s.mp4",
+  "idle": "/home/raspberry/videos/idle.jpg",
+  "cec_enabled": false
+}

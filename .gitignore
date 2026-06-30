@@ -17,3 +17,9 @@ venv/
 # Editor / OS files
 *.swp
 .DS_Store
+config/video.json
+__pycache__/
+*.pyc
+config/video.json
+__pycache__/
+*.pyc

@@ -82,13 +82,14 @@ def get_fire_delay(input_cfg):
     return delay_ms / 1000
 
 def send_press_release(msg, delay=DEFAULT_PRESS_RELEASE_DELAY):
-    """Send one TouchDesigner-style press/release pair: X,1 then X,0."""
+    """Send exact press message, then release with same first field and 0."""
+    msg = (msg or "").strip()
     if not msg or "," not in msg:
         return
 
-    base = msg.rsplit(",", 1)[0]
+    base = msg.split(",", 1)[0].strip()
 
-    send_udp(base + ",1")
+    send_udp(msg)
     time.sleep(delay)
     send_udp(base + ",0")
 
@@ -111,28 +112,20 @@ def get_current_input_message(input_cfg):
 
 
 def send_press_only(msg):
+    """Send exact configured press message."""
     msg = (msg or "").strip()
-    if not msg:
-        return
-
-    if "," in msg:
-        base = msg.rsplit(",", 1)[0]
-        send_udp(base + ",1")
-    else:
+    if msg:
         send_udp(msg)
 
 
 def send_release_only(msg):
+    """Send release as first field + ,0."""
     msg = (msg or "").strip()
-    if not msg:
+    if not msg or "," not in msg:
         return
 
-    if "," in msg:
-        base = msg.rsplit(",", 1)[0]
-        send_udp(base + ",0")
-    else:
-        send_udp(msg)
-
+    base = msg.split(",", 1)[0].strip()
+    send_udp(base + ",0")
 
 def advance_input(input_cfg):
     if not input_cfg:
