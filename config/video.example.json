@@ -4,5 +4,7 @@
   "gpio": 17,
   "video": "/home/raspberry/videos/sample-10s.mp4",
   "idle": "/home/raspberry/videos/idle.jpg",
-  "cec_enabled": false
+  "cec_enabled": true,
+  "active_low": true,
+  "audio_device": "hdmi:CARD=vc4hdmi,DEV=0"
 }

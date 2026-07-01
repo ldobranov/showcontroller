@@ -14,9 +14,11 @@ DEFAULT_CONFIG = {
     "id": "video1",
     "name": "Video 1",
     "gpio": 17,
+    "active_low": False,
     "video": "/home/raspberry/videos/example.mp4",
     "idle": "/home/raspberry/videos/idle.jpg",
-    "cec_enabled": False
+    "cec_enabled": False,
+    "audio_device": "hdmi:CARD=vc4hdmi,DEV=0",
 }
 
 
@@ -43,9 +45,11 @@ config = load_config()
 NODE_ID = config["id"]
 NODE_NAME = config["name"]
 GPIO_PIN = config["gpio"]
+ACTIVE_LOW = config.get("active_low", False)
 VIDEO_PATH = config["video"]
 IDLE_PATH = config.get("idle")
 CEC_ENABLED = config.get("cec_enabled", False)
+AUDIO_DEVICE = config.get("audio_device", "hdmi:CARD=vc4hdmi,DEV=0")
 
 current_mode = None
 vlc_process = None
@@ -75,6 +79,8 @@ def start_vlc():
         "--no-video-title-show",
         "--loop",
         "--quiet",
+        "--aout=alsa",
+        f"--alsa-audio-device={AUDIO_DEVICE}",
         "--extraintf", "rc",
         "--rc-host", f"{VLC_HOST}:{VLC_PORT}",
         first_file,
@@ -160,6 +166,8 @@ def set_active():
 
 log(f"Starting {NODE_NAME}")
 log(f"GPIO: {GPIO_PIN}")
+log(f"Active low: {ACTIVE_LOW}")
+log(f"Audio device: {AUDIO_DEVICE}")
 log(f"Video: {VIDEO_PATH}")
 log(f"Idle: {IDLE_PATH}")
 
@@ -178,7 +186,9 @@ try:
             current_mode = None
             set_idle()
 
-        if sensor.value == 1:
+        sensor_active = (sensor.value == 0) if ACTIVE_LOW else (sensor.value == 1)
+
+        if sensor_active:
             set_active()
         else:
             set_idle()

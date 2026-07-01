@@ -5,9 +5,8 @@
   <div class="card-header">
     <div>
       <h2>Videos</h2>
-      <p class="muted">Configure the local video player and manage media files.</p>
+      <p class="muted">Configure the local VLC video player and manage media files.</p>
     </div>
-    <span class="badge {% if status.video == 'active' %}ok{% else %}danger{% endif %}">Video node: {{ status.video }}</span>
   </div>
 
   <form method="post" action="/videos/save">
@@ -37,6 +36,7 @@
           {% endfor %}
         </select>
       </div>
+
       <div>
         <label>Idle media (.jpg / .mp4)</label>
         <select name="idle">
@@ -49,10 +49,26 @@
       </div>
     </div>
 
-    <label>
-      <input type="checkbox" name="cec_enabled" {% if video_cfg.cec_enabled %}checked{% endif %}>
-      HDMI CEC enabled
-    </label>
+    <div class="grid-2">
+      <div>
+        <label>Audio device</label>
+        <input type="text" name="audio_device" value="{{ video_cfg.audio_device }}">
+      </div>
+
+      <div>
+        <label>Options</label>
+
+        <label>
+          <input type="checkbox" name="active_low" {% if video_cfg.active_low %}checked{% endif %}>
+          Active low sensor
+        </label>
+
+        <label>
+          <input type="checkbox" name="cec_enabled" {% if video_cfg.cec_enabled %}checked{% endif %}>
+          HDMI CEC enabled
+        </label>
+      </div>
+    </div>
 
     <div class="actions">
       <button type="submit" class="primary">Save and restart player</button>

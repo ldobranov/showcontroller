@@ -1,49 +1,55 @@
-# ShowController v1.2.4
+# ShowController v1.2.6
 
-A modular Raspberry Pi based GPIO / Video Controller for interactive installations, museums, escape rooms and stage automation.
+A modular Raspberry Pi controller for GPIO, Video Playback and interactive installations.
+
+Designed for museums, escape rooms, exhibits, show control, digital signage and automation.
 
 ---
 
-## Features
+# Features
 
-### GPIO Controller
+## GPIO Controller
+
 - Unlimited GPIO inputs
 - Press / Release events
 - Single and Sequence modes
-- Configurable debounce
-- Hold detection
+- Debounce, Hold and Delay
 - Runtime GPIO reload
 - Live diagnostics (SSE)
 
-### Video Player
+## Video Player
+
 - Persistent VLC player
 - GPIO triggered playback
-- Idle image / idle video support
-- HDMI-CEC TV power on (optional)
-- 1080p playback (Pi4 recommended)
-- Optimized for Raspberry Pi
+- Idle image or idle video
+- HDMI audio output
+- Active High / Active Low sensor support
+- HDMI-CEC TV control (optional)
+- Optimized for Raspberry Pi 3 / 4
 
-### Web Interface
+## Web Interface
+
 - Dashboard
 - Inputs
 - Settings
 - Videos
 - Diagnostics
 - Logs
-- System page
+- System management
 
-### System
+## System
+
 - Backup / Restore configuration
-- OTA update from GitHub
-- Restart services
-- Switch GPIO / Video mode
-- Reboot Raspberry
+- OTA updates from GitHub
 - Version tracking
+- Service management
+- GPIO / Video mode switching
+- Raspberry reboot
 - Authentication
 
 ---
 
-## Requirements
+# Requirements
 
 ```bash
 sudo apt update
@@ -56,10 +62,11 @@ sudo apt install -y \
 
 ---
 
-## Installation
+# Installation
 
 ```bash
 git clone https://github.com/ldobranov/showcontroller.git
+
 cd showcontroller
 
 sudo ./install.sh
@@ -67,23 +74,28 @@ sudo ./install.sh
 
 ---
 
-## Updating
+# Updating
 
-Automatic:
+From the Web UI:
 
-System → Upgrade → Check for updates
+```
+System → Upgrade
+```
 
-or
+or manually:
 
 ```bash
 git fetch origin
 git reset --hard origin/main
+
 sudo ./update.sh
 ```
 
 ---
 
-## Runtime directory
+# Runtime Layout
+
+Application:
 
 ```
 /opt/showcontroller
@@ -95,56 +107,95 @@ Repository:
 /home/raspberry/showcontroller
 ```
 
----
-
-## Default Login
+Configuration:
 
 ```
-admin
-showcontroller
+/opt/showcontroller/config
+```
+
+Videos:
+
+```
+/home/raspberry/videos
 ```
 
 ---
 
-## Project structure
+# Default Login
+
+```
+Username: admin
+Password: showcontroller
+```
+
+Change the password immediately after installation.
+
+---
+
+# Project Structure
 
 ```
 showcontroller/
-    app.py
-    engine.py
-    routes/
-    services/
-    templates/
-    static/
-    video_node/
-    systemd/
+│
+├── app.py
+├── engine.py
+├── gpio.py
+├── service.py
+│
+├── routes/
+├── services/
+├── templates/
+├── static/
+├── video_node/
+├── systemd/
+│
+├── install.sh
+├── update.sh
+├── VERSION
+└── README.md
 ```
 
 ---
 
-## Current Version
+# Current Version
 
-```
-v1.2.4
-```
+**v1.2.6**
 
-```
-Persistent VLC player
-OTA updates
-Modular Flask routes
-Service manager
-Live GPIO diagnostics
-```
+### Highlights
+
+- Persistent VLC Video Player
+- HDMI Audio support
+- Active Low sensor support
+- OTA GitHub Updates
+- Version tracking
+- Modular Flask routes
+- Live GPIO diagnostics
+- Runtime GPIO reload
 
 ---
 
-## Roadmap
+# Roadmap
 
-### v2.0
+## v2.0 — ShowController Core
 
-- Multiple Video Nodes
-- Network discovery
-- Scheduler
+Separate the platform into a modular core and pluggable modules.
+
+### Core
+
+- Engine
+- GPIO abstraction
+- UDP
+- Service Manager
+- Configuration Manager
+- Event Bus
+
+### Modules
+
+- GPIO Controller
+- Video Player
+- Audio Player
+- DMX
 - MQTT
-- REST API
-- Plugin system
+- Modbus
+
+Future modules will be installable independently while sharing the same ShowController Core.

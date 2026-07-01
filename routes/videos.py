@@ -21,7 +21,9 @@ def video_default_config():
         "gpio": 17,
         "video": "/home/raspberry/videos/video1.mp4",
         "idle": "/home/raspberry/videos/idle.jpg",
-        "cec_enabled": False,
+        "cec_enabled": True,
+        "active_low": False,
+        "audio_device": "hdmi:CARD=vc4hdmi,DEV=0"
     }
 
 
@@ -98,7 +100,9 @@ def register_video_routes(app, render_page):
         cfg["gpio"] = int(request.form.get("gpio", "17") or 17)
         cfg["video"] = request.form.get("video", "").strip()
         cfg["idle"] = request.form.get("idle", "").strip()
+        cfg["active_low"] = request.form.get("active_low") == "on"
         cfg["cec_enabled"] = request.form.get("cec_enabled") == "on"
+        cfg["audio_device"] = request.form.get("audio_device",cfg.get("audio_device", "hdmi:CARD=vc4hdmi,DEV=0")).strip()
 
         video_save_config(cfg)
         log("VIDEOS config saved")

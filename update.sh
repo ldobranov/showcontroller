@@ -60,11 +60,18 @@ cp systemd/showcontroller-gpio.service /etc/systemd/system/
 systemctl daemon-reload
 
 echo
+echo
 echo "Restarting services..."
 
 systemctl restart showcontroller-web
-systemctl restart showcontroller-gpio
 
+if systemctl is-enabled --quiet showcontroller-video-node; then
+    systemctl restart showcontroller-video-node
+elif systemctl is-enabled --quiet showcontroller-gpio; then
+    systemctl restart showcontroller-gpio
+else
+    echo "No active mode service enabled."
+fi
 echo
 echo "======================================="
 echo " Update completed."
