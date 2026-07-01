@@ -21,7 +21,7 @@ apt install -y \
     python3 \
     python3-flask \
     python3-gpiozero \
-    mpv
+    vlc
 
 echo
 echo "Creating installation directory..."

@@ -1,6 +1,5 @@
 import json
 import os
-import socket
 import subprocess
 from pathlib import Path
 
@@ -12,7 +11,6 @@ from logger import log
 
 VIDEO_CONFIG = "/opt/showcontroller/config/video.json"
 VIDEO_MEDIA_DIR = "/home/raspberry/videos"
-VIDEO_MPV_SOCKET = "/tmp/showcontroller-mpv.sock"
 ALLOWED_VIDEO_EXT = {".mp4", ".jpg", ".jpeg"}
 
 
@@ -58,27 +56,6 @@ def video_media_files():
 
 def restart_video_service():
     subprocess.Popen(["sudo", "systemctl", "restart", "showcontroller-video-node.service"])
-
-
-def video_mpv_command(command):
-    try:
-        data = json.dumps(command) + "\n"
-        client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        client.connect(VIDEO_MPV_SOCKET)
-        client.send(data.encode("utf-8"))
-        client.close()
-        return True
-    except Exception as exc:
-        log(f"VIDEOS mpv IPC error: {exc}")
-        return False
-
-
-def video_load_file(path):
-    if not path or not os.path.exists(path):
-        log(f"VIDEOS file not found: {path}")
-        return False
-
-    return video_mpv_command({"command": ["loadfile", path, "replace"]})
 
 
 def register_video_routes(app, render_page):
@@ -154,14 +131,14 @@ def register_video_routes(app, render_page):
 
     @app.route("/videos/play", methods=["POST"])
     def videos_play():
-        cfg = video_load_config()
-        video_load_file(cfg.get("video"))
+        log("VIDEOS play main requested")
+        restart_video_service()
         return redirect("/videos")
 
     @app.route("/videos/idle", methods=["POST"])
     def videos_idle():
-        cfg = video_load_config()
-        video_load_file(cfg.get("idle"))
+        log("VIDEOS show idle requested")
+        restart_video_service()
         return redirect("/videos")
 
     @app.route("/videos/tv-on", methods=["POST"])

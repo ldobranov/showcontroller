@@ -1,17 +1,18 @@
 import json
-import os
 import socket
 import subprocess
 import time
 from pathlib import Path
+
 from gpiozero import DigitalInputDevice
 
 CONFIG_PATH = "/opt/showcontroller/config/video.json"
-MPV_SOCKET = "/tmp/showcontroller-mpv.sock"
+VLC_HOST = "127.0.0.1"
+VLC_PORT = 4212
 
 DEFAULT_CONFIG = {
-    "id": "oko1",
-    "name": "Око 1",
+    "id": "video1",
+    "name": "Video 1",
     "gpio": 17,
     "video": "/home/raspberry/videos/example.mp4",
     "idle": "/home/raspberry/videos/idle.jpg",
@@ -39,7 +40,6 @@ def load_config():
 
 config = load_config()
 
-
 NODE_ID = config["id"]
 NODE_NAME = config["name"]
 GPIO_PIN = config["gpio"]
@@ -48,7 +48,7 @@ IDLE_PATH = config.get("idle")
 CEC_ENABLED = config.get("cec_enabled", False)
 
 current_mode = None
-mpv_process = None
+vlc_process = None
 
 
 def log(message):
@@ -64,53 +64,63 @@ def tv_on():
     subprocess.run('echo "as" | cec-client -s -d 1', shell=True)
 
 
-def start_mpv():
-    global mpv_process
-
-    try:
-        os.remove(MPV_SOCKET)
-    except FileNotFoundError:
-        pass
+def start_vlc():
+    global vlc_process
 
     first_file = IDLE_PATH if IDLE_PATH and Path(IDLE_PATH).exists() else VIDEO_PATH
 
     cmd = [
-        "mpv",
-        "--fs",
-        "--no-border",
-        "--profile=fast",
-        "--hwdec=auto",
-        "--keep-open=yes",
-        "--idle=yes",
-        "--really-quiet",
-        "--osd-level=0",
-        "--force-window=yes",
-        "--loop-file=inf",
-        f"--input-ipc-server={MPV_SOCKET}",
-        first_file
+        "cvlc",
+        "--fullscreen",
+        "--no-video-title-show",
+        "--loop",
+        "--quiet",
+        "--extraintf", "rc",
+        "--rc-host", f"{VLC_HOST}:{VLC_PORT}",
+        first_file,
     ]
 
-    log("Starting persistent mpv")
-    mpv_process = subprocess.Popen(cmd)
+    log("Starting persistent VLC")
+    vlc_process = subprocess.Popen(cmd)
 
     for _ in range(50):
-        if os.path.exists(MPV_SOCKET):
+        if vlc_command("status", log_errors=False):
+            log("VLC RC ready")
             return
         time.sleep(0.1)
 
-    log("MPV socket not ready")
+    log("VLC RC not ready")
 
 
-def mpv_command(command):
-    data = json.dumps(command) + "\n"
+def stop_vlc():
+    global vlc_process
 
+    if vlc_process and vlc_process.poll() is None:
+        try:
+            vlc_command("shutdown", log_errors=False)
+            vlc_process.wait(timeout=2)
+        except Exception:
+            try:
+                vlc_process.terminate()
+                vlc_process.wait(timeout=2)
+            except Exception:
+                try:
+                    vlc_process.kill()
+                except Exception:
+                    pass
+
+    vlc_process = None
+
+
+def vlc_command(command, log_errors=True):
     try:
-        client = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
-        client.connect(MPV_SOCKET)
-        client.send(data.encode("utf-8"))
-        client.close()
+        with socket.create_connection((VLC_HOST, VLC_PORT), timeout=1) as sock:
+            sock.sendall((command + "\n").encode("utf-8"))
+        return True
     except Exception as e:
-        log(f"MPV IPC error: {e}")
+        if log_errors:
+            log(f"VLC RC error: {e}")
+        return False
 
 
 def load_file(path):
@@ -118,13 +128,12 @@ def load_file(path):
         log(f"File not found: {path}")
         return
 
-    mpv_command({
-        "command": ["loadfile", path, "replace"]
-    })
+    safe_path = str(Path(path))
 
-    mpv_command({
-        "command": ["set_property", "loop-file", "inf"]
-    })
+    vlc_command("stop")
+    vlc_command("clear")
+    vlc_command(f"add {safe_path}")
+    vlc_command("play")
 
 
 def set_idle():
@@ -155,21 +164,26 @@ log(f"Video: {VIDEO_PATH}")
 log(f"Idle: {IDLE_PATH}")
 
 tv_on()
-start_mpv()
+start_vlc()
 
 sensor = DigitalInputDevice(GPIO_PIN, pull_up=False)
 
 set_idle()
 
-while True:
-    if mpv_process and mpv_process.poll() is not None:
-        log("MPV crashed/exited, restarting")
-        start_mpv()
-        current_mode = None
+try:
+    while True:
+        if vlc_process and vlc_process.poll() is not None:
+            log("VLC crashed/exited, restarting")
+            start_vlc()
+            current_mode = None
+            set_idle()
 
-    if sensor.value == 1:
-        set_active()
-    else:
-        set_idle()
+        if sensor.value == 1:
+            set_active()
+        else:
+            set_idle()
 
-    time.sleep(0.1)
+        time.sleep(0.05)
+
+finally:
+    stop_vlc()
