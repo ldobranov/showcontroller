@@ -1,7 +1,6 @@
-from flask import Flask, render_template, request
-
 import auth
-from config import load_config
+from flask import Flask, render_template, request, redirect, url_for
+from config import load_config, get_version
 from logger import log
 from routes.auth import register_auth_routes
 from routes.diagnostics import register_diagnostics_routes
@@ -27,6 +26,7 @@ def render_page(template_name, **context):
         password_changed=request.args.get("password_changed"),
         password_error=request.args.get("password_error"),
         **context,
+        version=get_version(),
     )
 
 
@@ -36,8 +36,10 @@ register_video_routes(app, render_page)
 register_system_routes(app, render_page)
 register_diagnostics_routes(app, render_page)
 
-
 if __name__ == "__main__":
     log("WEB STARTED")
-    app.run(host="0.0.0.0", port=8080, threaded=True)
+
+    cfg = load_config()
+    app.run(host="0.0.0.0", port=80, threaded=True)
+
     log("WEB STOPPED")

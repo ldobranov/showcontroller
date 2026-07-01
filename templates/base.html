@@ -5,7 +5,8 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ cfg.name }}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-
+  <link rel="icon" type="image/x-icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
+  <link rel="shortcut icon" href="{{ url_for('static', filename='img/favicon.ico') }}">
 </head>
 <body>
   <main class="page">
@@ -33,11 +34,31 @@
   </nav>
   </header>
 
+
   <div class="status-bar">
-    <span class="status-item">WEB: <b class="{% if status.web == 'active' %}ok{% else %}danger{% endif %}">{{ status.web }}</b></span>
-    <span class="status-item">GPIO: <b class="{% if status.gpio == 'active' %}ok{% else %}danger{% endif %}">{{ status.gpio }}</b></span>
-    <span class="status-item">Logging: <b>{{ "ON" if status.logging else "OFF" }}</b></span>
+    <span class="status-item">
+      WEB:
+      <b class="{% if status.web == 'active' %}ok{% else %}danger{% endif %}">
+        {{ "Active" if status.web == "active" else "Inactive" }}
+      </b>
+    </span>
+
+    <span class="status-item">
+      MODE:
+      <b class="{% if status.mode_active %}ok{% else %}danger{% endif %}">
+        {{ status.mode }}
+      </b>
+    </span>
+
+    <span class="status-item">
+      LOGGING:
+      <b class="{% if status.logging %}ok{% else %}danger{% endif %}">
+        {{ "On" if status.logging else "Off" }}
+      </b>
+    </span>
+
     <span class="status-item">IP: <b>{{ status.ip }}</b></span>
+    <span class="status-item">VERSION: <b>{{ version }}</b></span>
   </div>
 
   {% block content %}{% endblock %}

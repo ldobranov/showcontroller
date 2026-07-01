@@ -5,7 +5,7 @@ Wants=network-online.target
 
 [Service]
 Type=simple
-User=raspberry
+User=root
 WorkingDirectory=/opt/showcontroller
 ExecStart=/usr/bin/python3 /opt/showcontroller/app.py
 Restart=always
