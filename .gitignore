@@ -4,11 +4,16 @@ __pycache__/
 *.pyd
 
 # Runtime files
+config.json
 auth.json
 events.log
 state.json
 gpio.reload
 *.tmp
+.lgd-nfy*
+
+# Local video config
+config/video.json
 
 # Virtual environments
 venv/
@@ -17,9 +22,3 @@ venv/
 # Editor / OS files
 *.swp
 .DS_Store
-config/video.json
-__pycache__/
-*.pyc
-config/video.json
-__pycache__/
-*.pyc
