@@ -1,0 +1,109 @@
+{
+  "name": "Имена",
+  "touchdesigner": {
+    "ip": "192.168.0.127",
+    "port": 8889
+  },
+  "inputs": [
+    {
+      "enabled": true,
+      "name": "Input 1",
+      "gpio": 17,
+      "pullup": false,
+      "trigger": "press",
+      "debounce_ms": 80,
+      "fire_delay_ms": 200,
+      "hold_ms": 0,
+      "fire_mode": "timed",
+      "mode": "single",
+      "message": "9,1",
+      "sequence": []
+    },
+    {
+      "enabled": true,
+      "name": "Input 2",
+      "gpio": 27,
+      "pullup": false,
+      "trigger": "press",
+      "debounce_ms": 80,
+      "fire_delay_ms": 200,
+      "hold_ms": 0,
+      "fire_mode": "timed",
+      "mode": "single",
+      "message": "10,2",
+      "sequence": []
+    },
+    {
+      "enabled": true,
+      "name": "Input 3",
+      "gpio": 22,
+      "pullup": false,
+      "trigger": "press",
+      "debounce_ms": 80,
+      "fire_delay_ms": 200,
+      "hold_ms": 0,
+      "fire_mode": "timed",
+      "mode": "single",
+      "message": "11,3",
+      "sequence": []
+    },
+    {
+      "enabled": true,
+      "name": "Input 4",
+      "gpio": 23,
+      "pullup": false,
+      "trigger": "press",
+      "debounce_ms": 80,
+      "fire_delay_ms": 200,
+      "hold_ms": 0,
+      "fire_mode": "timed",
+      "mode": "single",
+      "message": "12,4",
+      "sequence": []
+    },
+    {
+      "enabled": true,
+      "name": "Input 5",
+      "gpio": 25,
+      "pullup": false,
+      "trigger": "press",
+      "debounce_ms": 80,
+      "fire_delay_ms": 200,
+      "hold_ms": 0,
+      "fire_mode": "timed",
+      "mode": "single",
+      "message": "13,5",
+      "sequence": []
+    },
+    {
+      "enabled": true,
+      "name": "Input 6",
+      "gpio": 8,
+      "pullup": false,
+      "trigger": "press",
+      "debounce_ms": 80,
+      "fire_delay_ms": 200,
+      "hold_ms": 0,
+      "fire_mode": "timed",
+      "mode": "single",
+      "message": "14,6",
+      "sequence": []
+    },
+    {
+      "enabled": true,
+      "name": "Input 7",
+      "gpio": 7,
+      "pullup": false,
+      "trigger": "press",
+      "debounce_ms": 250,
+      "fire_delay_ms": 200,
+      "hold_ms": 0,
+      "fire_mode": "timed",
+      "mode": "single",
+      "message": "15,7",
+      "sequence": []
+    }
+  ],
+  "logging_enabled": true,
+  "version": "1.0.0"
+}
