@@ -13,7 +13,7 @@ DEFAULT_CONFIG = {
     "id": "oko1",
     "name": "Око 1",
     "gpio": 17,
-    "video": "/home/raspberry/videos/oko1.mp4",
+    "video": "/home/raspberry/videos/example.mp4",
     "idle": "/home/raspberry/videos/idle.jpg",
     "cec_enabled": False
 }

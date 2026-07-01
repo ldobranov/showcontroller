@@ -34,7 +34,6 @@ def get_status():
         "video": service_status("showcontroller-video-node"),
         "logging": cfg.get("logging_enabled", True),
         "ip": get_ip(),
-        "node_mode": "video",
     }
 
 

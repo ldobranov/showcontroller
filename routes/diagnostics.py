@@ -3,7 +3,7 @@ import subprocess
 from flask import Response, jsonify, redirect, request
 
 import engine
-import eventbus
+import services.eventbus
 from config import load_config
 from logger import get_logs, log
 
