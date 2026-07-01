@@ -200,14 +200,16 @@ Clone the repository:
 git clone https://github.com/ldobranov/showcontroller.git
 ```
 
-Install Python packages:
+Install system packages:
 
 ```bash
 sudo apt update
 
 sudo apt install -y \
+    python3 \
     python3-flask \
-    python3-gpiozero
+    python3-gpiozero \
+    mpv
 ```
 
 Install the systemd services:

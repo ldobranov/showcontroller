@@ -1,3 +1,5 @@
 Flask
+Werkzeug
+gpiozero
 # gpiozero is usually installed through apt on Raspberry Pi OS:
 # sudo apt install -y python3-gpiozero
