@@ -4,49 +4,25 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{{ cfg.name }}</title>
-  <style>
-    body { font-family: Arial, sans-serif; max-width: 980px; margin: 24px auto; padding: 0 12px; background: #fafafa; color: #222; }
-    h1 { margin-bottom: 6px; }
-    h2, h3 { margin-top: 0; }
-    a { color: #0645ad; }
-    nav { margin: 14px 0 18px; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
-    nav a { text-decoration: none; padding: 9px 12px; border: 1px solid #ccc; border-radius: 8px; background: white; color: #222; }
-    nav a.active { background: #222; color: white; border-color: #222; }
-    button { font-size: 16px; padding: 9px 14px; margin: 4px; cursor: pointer; border: 1px solid #aaa; border-radius: 6px; background: white; }
-    button.primary { background: #222; color: white; border-color: #222; }
-    input, select, textarea { font-size: 16px; padding: 7px; width: 100%; box-sizing: border-box; margin: 4px 0 10px; border: 1px solid #bbb; border-radius: 5px; }
-    textarea { height: 110px; font-family: Consolas, monospace; }
-    label { font-weight: 600; }
-    .box { border: 1px solid #ddd; background: white; padding: 15px; margin: 15px 0; border-radius: 10px; }
-    .status { font-size: 15px; display: flex; flex-wrap: wrap; gap: 12px; }
-    .pill { display: inline-block; padding: 3px 8px; border-radius: 999px; background: #eee; }
-    .ok { color: #137333; font-weight: bold; }
-    .muted { color: #666; }
-    .danger { color: #b3261e; font-weight: bold; }
-    .warn { color: #b26a00; font-weight: bold; }
-    .input-row { border-top: 1px solid #eee; padding: 15px 0; }
-    .input-row:first-child { border-top: 0; }
-    .grid { display: grid; grid-template-columns: 2fr 1fr 1fr; gap: 10px; }
-    .actions { margin-top: 10px; }
-    .inline-checkbox { width: auto; margin-right: 6px; }
-    code { font-size: 17px; }
-    pre { white-space: pre-wrap; background: #111; color: #eee; padding: 12px; border-radius: 8px; overflow-x: auto; }
-    .sequence-buttons form { display: inline; }
-    .live-status { font-weight: bold; }
-    .live-event { color: #555; font-size: 14px; margin-left: 6px; }
-    .live-count { color: #555; font-size: 14px; margin-left: 6px; }
-    @media (max-width: 700px) { .grid { grid-template-columns: 1fr; } }
-    .advanced { margin: 12px 0; padding: 10px; border: 1px dashed #bbb; border-radius: 8px; }
-    .advanced summary { cursor: pointer; font-weight: bold; }
-    .nav-spacer { flex: 1; }
-    .logout-form { display: inline; margin: 0; }
-    .logout-form button { font-size: 14px; padding: 7px 10px; margin: 0; }
-</style>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+
 </head>
 <body>
-  <h1>{{ cfg.name }}</h1>
+  <main class="page">
+  <header class="topbar">
+    <div class="brand-row">
+      <div class="brand-title">{{ cfg.name }}</div>
+      {% if auth_enabled %}
+        <div class="user-area">
+          <span>User: <b>{{ auth_user }}</b></span>
+          <form class="logout-form" method="post" action="/logout">
+            <button type="submit" class="compact">Logout</button>
+          </form>
+        </div>
+      {% endif %}
+    </div>
 
-  <nav>
+  <nav class="nav">
     <a href="/" class="{% if active_page == 'dashboard' %}active{% endif %}">Dashboard</a>
     <a href="/inputs" class="{% if active_page == 'inputs' %}active{% endif %}">Inputs</a>
     <a href="/settings" class="{% if active_page == 'settings' %}active{% endif %}">Settings</a>
@@ -54,24 +30,17 @@
     <a href="/videos" class="{% if active_page == 'videos' %}active{% endif %}">Videos</a>
     <a href="/diagnostics" class="{% if active_page == 'diagnostics' %}active{% endif %}">Diagnostics</a>
     <a href="/system" class="{% if active_page == 'system' %}active{% endif %}">System</a>
-    <span class="nav-spacer"></span>
-    {% if auth_enabled %}
-      <span class="muted">User: <b>{{ auth_user }}</b></span>
-      <form class="logout-form" method="post" action="/logout">
-        <button type="submit">Logout</button>
-      </form>
-    {% endif %}
   </nav>
+  </header>
 
-  <div class="box status">
-    <span>WEB: <b class="{% if status.web == 'active' %}ok{% else %}danger{% endif %}">{{ status.web }}</b></span>
-    <span>GPIO: <b class="{% if status.gpio == 'active' %}ok{% else %}danger{% endif %}">{{ status.gpio }}</b></span>
-    <span>Logging: <b>{{ "ON" if status.logging else "OFF" }}</b></span>
-    <span>IP: <b>{{ status.ip }}</b></span>
+  <div class="status-bar">
+    <span class="status-item">WEB: <b class="{% if status.web == 'active' %}ok{% else %}danger{% endif %}">{{ status.web }}</b></span>
+    <span class="status-item">GPIO: <b class="{% if status.gpio == 'active' %}ok{% else %}danger{% endif %}">{{ status.gpio }}</b></span>
+    <span class="status-item">Logging: <b>{{ "ON" if status.logging else "OFF" }}</b></span>
+    <span class="status-item">IP: <b>{{ status.ip }}</b></span>
   </div>
 
   {% block content %}{% endblock %}
-
 
   <script>
     function updateLiveInput(inp) {
@@ -123,5 +92,6 @@
 
     document.addEventListener('DOMContentLoaded', startEventStream);
   </script>
+  </main>
 </body>
 </html>
