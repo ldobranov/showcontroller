@@ -1,148 +1,403 @@
-# ShowController v1.1
+# ShowController v1.2
 
-ShowController is a Raspberry Pi GPIO to UDP controller with a web interface.
+**ShowController** is a Raspberry Pi based GPIO and Video Controller designed for interactive installations, museums, escape rooms, stage automation, multimedia exhibits and TouchDesigner projects.
 
-It is designed for interactive installations, exhibits, stage/show control, museum installations, and similar systems where physical inputs need to trigger UDP messages on another machine.
+It provides a modern web interface for configuring GPIO inputs, sending UDP commands and controlling video playback without editing configuration files manually.
 
-## Features
+---
 
-- GPIO input manager
-- Single and sequence input modes
-- UDP press/release message engine
-- Configurable GPIO, pull-up, trigger edge, debounce, hold, and press/release delay
-- Web dashboard
-- Live GPIO status with Server-Sent Events
-- Diagnostics page
-- Logs page
-- System controls
-- Backup and restore for configuration
-- Hot reload for GPIO inputs without restarting the GPIO service
-- Basic session login
-- Password change page
+# Features
 
-## Runtime layout
+## GPIO Controller
 
-The application is intended to run from:
+- Multiple GPIO inputs
+- Single and Sequence modes
+- Press or Release triggering
+- Timed and Real Release fire modes
+- Configurable debounce
+- Hold detection
+- Pull-up / Pull-down support
+- Hot GPIO reload without restarting the GPIO service
 
-```text
+## UDP Engine
+
+- Configurable destination IP and port
+- Automatic press/release messages
+- Sequence playback
+- Real Release mode
+- Compatible with TouchDesigner UDP workflows
+
+## Video Player
+
+- Video Node integration
+- Idle / Main video switching
+- Video playlist configuration
+- Video Node restart from Web UI
+
+## Web Interface
+
+- Dashboard
+- Inputs
+- Videos
+- Diagnostics
+- Logs
+- Settings
+- System
+
+## Authentication
+
+- Session based login
+- Password hashing
+- Change password page
+
+## Diagnostics
+
+- Live GPIO monitoring
+- Server-Sent Events (SSE)
+- Runtime statistics
+- Service status
+
+## Configuration
+
+- Backup / Restore
+- Runtime configuration
+- Automatic GPIO reload after saving Inputs
+- No GPIO service restart required
+
+---
+
+# Architecture
+
+```
+ Browser
+     │
+     ▼
+ Flask Web UI
+     │
+     ├──────────────┐
+     ▼              ▼
+ Engine        Video Node
+     │
+     ▼
+ GPIO Engine
+     │
+     ▼
+ UDP Output
+     │
+     ▼
+ TouchDesigner
+```
+
+---
+
+# Project structure
+
+```
+showcontroller/
+│
+├── app.py
+├── engine.py
+├── gpio.py
+├── udp.py
+├── auth.py
+├── config.py
+├── logger.py
+├── state.py
+│
+├── routes/
+│   ├── auth.py
+│   ├── diagnostics.py
+│   ├── main.py
+│   ├── system.py
+│   └── videos.py
+│
+├── services/
+│   ├── backup.py
+│   ├── eventbus.py
+│   └── service_manager.py
+│
+├── static/
+│   ├── css/
+│   ├── img/
+│   └── js/
+│
+├── templates/
+├── docs/
+├── examples/
+├── hardware/
+└── systemd/
+```
+
+---
+
+# Runtime layout
+
+Production installation:
+
+```
 /opt/showcontroller
 ```
 
-The GitHub source is kept at repository root for easier deployment.
+Runtime files:
 
-## Quick install
-
-Copy the project files into `/opt/showcontroller`:
-
-```bash
-sudo rm -rf /opt/showcontroller
-sudo mkdir -p /opt/showcontroller
-sudo cp -r ./* /opt/showcontroller/
+```
+config.json
+auth.json
+state.json
+events.log
+gpio.reload
 ```
 
-Set permissions:
+These files are **not tracked by Git**.
+
+If `config.json` does not exist, it is automatically created from:
+
+```
+config.default.json
+```
+
+---
+
+# Development layout
+
+Development repository:
+
+```
+/home/raspberry/showcontroller
+```
+
+Production deployment:
+
+```
+/opt/showcontroller
+```
+
+Deploy using:
 
 ```bash
+sudo rsync -av --delete \
+  --exclude '.git' \
+  --exclude 'config.json' \
+  --exclude 'auth.json' \
+  --exclude 'state.json' \
+  --exclude 'events.log' \
+  /home/raspberry/showcontroller/ \
+  /opt/showcontroller/
+
 sudo chown -R raspberry:raspberry /opt/showcontroller
-sudo chmod -R 755 /opt/showcontroller
-sudo chmod 644 /opt/showcontroller/*.py
-sudo chmod 644 /opt/showcontroller/*.json
-sudo chmod 644 /opt/showcontroller/templates/*.html
+
+sudo systemctl restart showcontroller-web
+sudo systemctl restart showcontroller-gpio
 ```
 
-Create runtime files if they do not exist:
+---
+
+# Installation
+
+Clone the repository:
 
 ```bash
-cd /opt/showcontroller
-touch events.log
-[ -f state.json ] || echo '{"inputs":{}}' > state.json
-chmod 664 events.log state.json
-# auth.json will be created automatically on first web start
+git clone https://github.com/ldobranov/showcontroller.git
 ```
 
-Install Python dependencies:
+Install Python packages:
 
 ```bash
 sudo apt update
-sudo apt install -y python3-flask python3-gpiozero
+
+sudo apt install -y \
+    python3-flask \
+    python3-gpiozero
 ```
 
-Install systemd services from `systemd/` if needed:
+Install the systemd services:
 
 ```bash
-sudo cp /opt/showcontroller/systemd/showcontroller-web.service /etc/systemd/system/
-sudo cp /opt/showcontroller/systemd/showcontroller-gpio.service /etc/systemd/system/
+sudo cp systemd/showcontroller-web.service /etc/systemd/system/
+sudo cp systemd/showcontroller-gpio.service /etc/systemd/system/
+
 sudo systemctl daemon-reload
-sudo systemctl enable showcontroller-web showcontroller-gpio
-sudo systemctl restart showcontroller-web showcontroller-gpio
+
+sudo systemctl enable showcontroller-web
+sudo systemctl enable showcontroller-gpio
+
+sudo systemctl start showcontroller-web
+sudo systemctl start showcontroller-gpio
 ```
 
-Open the web UI:
+Open:
 
-```text
-http://<raspberry-ip>:8080
+```
+http://<raspberry-ip>/
 ```
 
-## UDP message format
+(Default HTTP port 80)
 
-The current engine expects messages in the form:
+---
 
-```text
-<number>,1
+# Authentication
+
+Default credentials:
+
+```
+Username: admin
+Password: showcontroller
 ```
 
-When fired, ShowController sends:
+Change the password immediately after installation.
 
-```text
-<number>,1
+Passwords are stored as a secure hash in:
+
+```
+/opt/showcontroller/auth.json
 ```
 
-waits for the configured press/release delay, then sends:
+---
 
-```text
-<number>,0
+# UDP Message Format
+
+Messages are configured as:
+
+```
+<number>,<value>
 ```
 
 Example:
 
-```text
-20,1 -> 20,0
+```
+20,1
 ```
 
-For single mode, set the message field to something like:
+### Timed mode
 
-```text
-1,1
+ShowController sends:
+
+```
+20,1
 ```
 
-For sequence mode, use one message per line:
+waits for the configured delay and then sends:
 
-```text
-1,1
-2,1
-3,1
+```
+20,0
 ```
 
-## Authentication
+### Real Release mode
 
-Default login:
+On button press:
 
-```text
-admin / showcontroller
+```
+20,1
 ```
 
-Change the password from **Settings → Authentication** before using ShowController on a shared network. The password is stored as a hash in `/opt/showcontroller/auth.json`.
+On button release:
 
-## Configuration
+```
+20,0
+```
 
-The main configuration file is:
+---
 
-```text
+# Configuration
+
+Main configuration:
+
+```
 /opt/showcontroller/config.json
 ```
 
-A backup can be downloaded and restored from the System page.
+Default template:
 
-## Project status
+```
+config.default.json
+```
 
-This is v1.1. It is stable enough for field testing and small production installations, but hardware input quality still matters. For noisy analog-like sensors, use proper conditioning hardware, a comparator, or an ADC.
+Configuration can be backed up and restored directly from the **System** page.
+
+---
+
+# System Services
+
+The application is split into two independent services.
+
+### showcontroller-web
+
+- Flask Web Interface
+- Authentication
+- Configuration
+- Diagnostics
+- System management
+
+### showcontroller-gpio
+
+- GPIO monitoring
+- Input processing
+- UDP output
+- Hot configuration reload
+
+Both services are managed by **systemd**.
+
+---
+
+# Current Status
+
+**Version 1.2**
+
+Current stable release.
+
+Included features:
+
+- GPIO Controller
+- Video Player mode
+- Authentication
+- Runtime configuration
+- Live diagnostics
+- Backup / Restore
+- Hot GPIO reload
+- Modular Flask routes
+- Service architecture
+- Port 80 Web Interface
+
+---
+
+# Roadmap
+
+## Version 1.3
+
+- REST API
+- JavaScript modules
+- Improved diagnostics
+- Better Video UI
+
+## Version 2.0
+
+- Plugin architecture
+- Scheduler
+- MQTT support
+- DMX support
+- Audio Player
+- Multi-device management
+
+---
+
+# License
+
+MIT License
+
+Copyright (c) Lazar Dobranov
+
+```
+
+---
+
+### Само една забележка
+
+Бих сменил заглавието от:
+
+> **GPIO and Video Controller**
+
+на:
+
+> **Interactive Show Control Platform**
+
+Това звучи много по-професионално и не ограничава проекта до GPIO и Video. Ако след година добавиш DMX, MQTT, OSC, Audio и REST API, README няма да се налага да се пренаписва. Според мен това е по-добро описание на посоката, в която се развива ShowController.
