@@ -1,13 +1,14 @@
 from flask import Flask, render_template, request
 
 import auth
-from auth_routes import register_auth_routes
 from config import load_config
-from diagnostics_routes import register_diagnostics_routes
 from logger import log
-from main_routes import register_main_routes
-from system_routes import get_ip, get_status, register_system_routes
-from videos import register_video_routes
+from routes.auth import register_auth_routes
+from routes.diagnostics import register_diagnostics_routes
+from routes.main import register_main_routes
+from routes.system import get_ip, get_status, register_system_routes
+from routes.videos import register_video_routes
+
 
 app = Flask(__name__)
 app.secret_key = auth.get_secret_key()
