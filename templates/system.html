@@ -35,11 +35,42 @@
   <div class="box">
     <h2>Backup / Restore</h2>
     <a href="/backup/config"><button type="button">Download Config</button></a>
-
     <form method="post" action="/restore/config" enctype="multipart/form-data">
       <label>Restore config.json</label>
       <input type="file" name="config_file" accept=".json">
       <button type="submit">Restore Config</button>
     </form>
   </div>
+
+  <div class="box">
+    <h2>Upgrade</h2>
+
+    <p>
+      Current version:
+      <b>{{ update.version or version }}</b>
+    </p>
+
+    {% if update.message %}
+      <p><b>{{ update.message }}</b></p>
+
+      {% if update.installed or update.remote %}
+        <p class="muted">
+          Installed commit: {{ update.installed or "-" }}<br>
+          Latest commit: {{ update.remote or "-" }}
+        </p>
+      {% endif %}
+    {% endif %}
+
+    <form method="post" action="/system/check-updates" style="display:inline">
+      <button type="submit">Check for updates</button>
+    </form>
+
+    {% if update.update_available %}
+      <form method="post" action="/system/install-update" style="display:inline">
+        <button type="submit" class="primary">Update now</button>
+      </form>
+    {% endif %}
+  </div>
+
+
 {% endblock %}

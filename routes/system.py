@@ -6,13 +6,13 @@ from services.service_manager import (
     restart_service as system_restart_service,
     service_status,
 )
+from services.updater import check_for_updates, get_last_update_status, install_update
 from services.backup import config_backup_path, restore_config_file
 from flask import redirect, request, send_file
-
-import engine
 from config import load_config
 from logger import log
 
+import engine
 
 def get_status():
     cfg = load_config()
@@ -40,9 +40,14 @@ def get_status():
     }
 
 def register_system_routes(app, render_page):
+
     @app.route("/system")
     def system_page():
-        return render_page("system.html", active_page="system")
+        return render_page(
+            "system.html",
+            active_page="system",
+            update=get_last_update_status(),
+        )
 
     @app.route("/system/mode/video", methods=["POST"])
     def system_mode_video():
@@ -99,3 +104,16 @@ def register_system_routes(app, render_page):
         log("SYSTEM reboot requested")
         system_reboot()
         return redirect("/system")
+
+    @app.route("/system/check-updates", methods=["POST"])
+    def check_updates():
+        result = check_for_updates()
+        log(f"UPDATE check: {result.get('message')}")
+        return redirect("/system")
+
+    @app.route("/system/install-update", methods=["POST"])
+    def install_update_route():
+        ok, message = install_update()
+        log(f"UPDATE install: {message}")
+        return redirect("/system")
+

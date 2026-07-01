@@ -25,6 +25,21 @@ rsync -av --delete \
     --exclude "gpio.reload" \
     ./ /opt/showcontroller/
 
+COMMIT="$(git rev-parse --short HEAD)"
+VERSION="$(cat VERSION)"
+INSTALLED_AT="$(date -Iseconds)"
+
+cat > /opt/showcontroller/version.json <<EOF
+{
+  "version": "$VERSION",
+  "commit": "$COMMIT",
+  "installed_at": "$INSTALLED_AT"
+}
+EOF
+
+chown raspberry:raspberry /opt/showcontroller/version.json
+chmod 644 /opt/showcontroller/version.json
+
 echo
 echo "Setting permissions..."
 
