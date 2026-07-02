@@ -1,3 +1,8 @@
+from services.modules import (
+    load_modules,
+    set_module_enabled,
+    apply_modules,
+)
 from services.service_manager import (
     disable_service,
     enable_service,
@@ -48,6 +53,18 @@ def register_system_routes(app, render_page):
             active_page="system",
             update=get_last_update_status(),
         )
+
+    @app.route("/system/modules", methods=["POST"])
+    def system_modules():
+
+      set_module_enabled("gpio", request.form.get("gpio") == "on")
+      set_module_enabled("video", request.form.get("video") == "on")
+
+      apply_modules()
+
+      log("SYSTEM modules updated")
+
+      return redirect("/system")
 
     @app.route("/system/mode/video", methods=["POST"])
     def system_mode_video():

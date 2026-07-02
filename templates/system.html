@@ -9,6 +9,26 @@
 <div class="card">
     <h2>Node Mode</h2>
 
+  <div class="box">
+    <h2>Modules</h2>
+
+    <form method="post" action="/system/modules">
+      <label>
+        <input type="checkbox" name="gpio" {% if modules.gpio %}checked{% endif %}>
+        GPIO Controller
+      </label>
+
+      <label>
+        <input type="checkbox" name="video" {% if modules.video %}checked{% endif %}>
+        Video Player
+      </label>
+
+      <div class="actions">
+        <button type="submit" class="primary">Save modules</button>
+      </div>
+    </form>
+  </div>
+
     <form method="post" action="/system/mode/video">
         <button type="submit">Switch to Video</button>
     </form>

@@ -1,4 +1,5 @@
 import auth
+from services.modules import load_modules
 from flask import Flask, render_template, request, redirect, url_for
 from config import load_config, get_version
 from logger import log
@@ -17,6 +18,7 @@ def render_page(template_name, **context):
     cfg = load_config()
     return render_template(
         template_name,
+        modules=load_modules(),
         cfg=cfg,
         status=get_status(),
         ip=get_ip(),
