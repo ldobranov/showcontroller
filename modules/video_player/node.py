@@ -6,6 +6,8 @@ from pathlib import Path
 
 from gpiozero import DigitalInputDevice
 
+from modules.video_player.cec import tv_power_on
+
 CONFIG_PATH = "/opt/showcontroller/config/video.json"
 VLC_HOST = "127.0.0.1"
 VLC_PORT = 4212
@@ -66,9 +68,7 @@ def tv_on():
     if not CEC_ENABLED:
         return
 
-    subprocess.run('echo "on 0" | cec-client -s -d 1', shell=True)
-    time.sleep(2)
-    subprocess.run('echo "as" | cec-client -s -d 1', shell=True)
+    tv_power_on(log)
 
 
 def start_vlc():

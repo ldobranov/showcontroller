@@ -3,6 +3,7 @@ from services.installer import apt_install, missing_apt_packages
 
 APT_PACKAGES = [
     "vlc",
+    "cec-utils",
 ]
 
 

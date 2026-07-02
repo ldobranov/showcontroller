@@ -4,6 +4,7 @@ from flask import redirect, request
 from werkzeug.utils import secure_filename
 from services.modules import module_required
 from logger import log
+from modules.video_player.cec import tv_power_on, tv_active_source
 
 import json
 import os
@@ -161,12 +162,12 @@ def register_video_routes(app, render_page):
     @module_required(MODULE["key"])
     def videos_tv_on():
         log("VIDEOS TV ON requested")
-        subprocess.Popen('echo "on 0" | cec-client -s -d 1', shell=True)
+        tv_power_on(log)
         return redirect("/videos")
 
     @app.route("/videos/tv-hdmi", methods=["POST"])
     @module_required(MODULE["key"])
     def videos_tv_hdmi():
         log("VIDEOS TV HDMI requested")
-        subprocess.Popen('echo "as" | cec-client -s -d 1', shell=True)
+        tv_active_source(log)
         return redirect("/videos")
