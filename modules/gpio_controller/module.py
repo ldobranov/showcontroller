@@ -3,9 +3,9 @@ KEY = "gpio"
 
 MENU = [
     {
-        "label": "Inputs",
-        "url": "/inputs",
-        "page": "inputs",
+        "label": "Triggers",
+        "url": "/triggers",
+        "page": "triggers",
     }
 ]
 
@@ -15,4 +15,5 @@ SERVICES = [
 
 
 def register(app, render_page):
-    return
+    from .routes import register_gpio_routes
+    register_gpio_routes(app, render_page)
