@@ -1,13 +1,13 @@
-import json
-import os
-import subprocess
+from .manifest import MODULE
 from pathlib import Path
-
 from flask import redirect, request
 from werkzeug.utils import secure_filename
 from services.modules import module_required
 from logger import log
 
+import json
+import os
+import subprocess
 
 VIDEO_CONFIG = "/opt/showcontroller/config/video.json"
 VIDEO_MEDIA_DIR = "/home/raspberry/videos"
@@ -63,7 +63,7 @@ def restart_video_service():
 def register_video_routes(app, render_page):
 
     @app.route("/videos")
-    @module_required("video")
+    @module_required(MODULE["key"])
     def videos_page():
         return render_page(
             "videos.html",
@@ -73,7 +73,7 @@ def register_video_routes(app, render_page):
         )
 
     @app.route("/videos/upload", methods=["POST"])
-    @module_required("video")
+    @module_required(MODULE["key"])
     def videos_upload():
         file = request.files.get("media_file")
 
@@ -95,7 +95,7 @@ def register_video_routes(app, render_page):
         return redirect("/videos")
 
     @app.route("/videos/save", methods=["POST"])
-    @module_required("video")
+    @module_required(MODULE["key"])
     def videos_save():
         cfg = video_load_config()
 
@@ -119,14 +119,14 @@ def register_video_routes(app, render_page):
         return redirect("/videos")
 
     @app.route("/videos/restart", methods=["POST"])
-    @module_required("video")
+    @module_required(MODULE["key"])
     def videos_restart():
         log("VIDEOS restart requested")
         restart_video_service()
         return redirect("/videos")
 
     @app.route("/videos/delete", methods=["POST"])
-    @module_required("video")
+    @module_required(MODULE["key"])
     def videos_delete():
         path = request.form.get("path", "").strip()
 
@@ -144,28 +144,28 @@ def register_video_routes(app, render_page):
         return redirect("/videos")
 
     @app.route("/videos/play", methods=["POST"])
-    @module_required("video")
+    @module_required(MODULE["key"])
     def videos_play():
         log("VIDEOS play main requested")
         restart_video_service()
         return redirect("/videos")
 
     @app.route("/videos/idle", methods=["POST"])
-    @module_required("video")
+    @module_required(MODULE["key"])
     def videos_idle():
         log("VIDEOS show idle requested")
         restart_video_service()
         return redirect("/videos")
 
     @app.route("/videos/tv-on", methods=["POST"])
-    @module_required("video")
+    @module_required(MODULE["key"])
     def videos_tv_on():
         log("VIDEOS TV ON requested")
         subprocess.Popen('echo "on 0" | cec-client -s -d 1', shell=True)
         return redirect("/videos")
 
     @app.route("/videos/tv-hdmi", methods=["POST"])
-    @module_required("video")
+    @module_required(MODULE["key"])
     def videos_tv_hdmi():
         log("VIDEOS TV HDMI requested")
         subprocess.Popen('echo "as" | cec-client -s -d 1', shell=True)

@@ -17,6 +17,21 @@
       </form>
     </div>
 
+    <div class="box">
+      <h2>Trigger Output</h2>
+      <p class="muted">UDP target for TouchDesigner / external controller.</p>
+
+      <form method="post" action="/triggers/save-settings">
+        <label>UDP Target IP</label>
+        <input name="td_ip" value="{{ cfg.touchdesigner.ip }}">
+
+        <label>UDP Target Port</label>
+        <input name="td_port" value="{{ cfg.touchdesigner.port }}">
+
+        <button type="submit" class="primary">SAVE UDP TARGET</button>
+      </form>
+    </div>
+
     {% for inp in inputs %}
       <div class="input-row" data-live-input-name="{{ inp.name }}">
         <b>{{ inp.name }}</b>

@@ -23,6 +23,8 @@ rsync -av --delete \
     --exclude "events.log" \
     --exclude "state.json" \
     --exclude "gpio.reload" \
+    --exclude "modules.json" \
+    --exclude "config/video.json" \
     ./ /opt/showcontroller/
 
 COMMIT="$(git rev-parse --short HEAD)"

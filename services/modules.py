@@ -5,46 +5,77 @@ import subprocess
 
 from functools import wraps
 from flask import abort
-
+from pathlib import Path
 
 MODULES_FILE = "/opt/showcontroller/modules.json"
 
-MODULE_DEFINITIONS = [
-    "modules.gpio_controller.module",
-    "modules.video_player.module",
-]
+BASE_DIR = Path(__file__).resolve().parents[1]
+MODULES_DIR = BASE_DIR / "modules"
 
-DEFAULT_MODULES = {
-    "gpio": True,
-    "video": True,
-}
+def default_modules():
+    return {
+        item["key"]: item.get("enabled_by_default", True)
+        for item in get_available_modules()
+    }
 
+def discover_module_manifests():
+    manifests = []
+
+    for path in sorted(MODULES_DIR.iterdir()):
+        if not path.is_dir():
+            continue
+
+        if not (path / "manifest.py").exists():
+            continue
+
+        manifests.append(f"modules.{path.name}.manifest")
+
+    return manifests
+
+def import_callable(path):
+    module_path, function_name = path.rsplit(".", 1)
+    module = importlib.import_module(module_path)
+    return getattr(module, function_name)
 
 def get_available_modules():
     result = []
+    seen_keys = set()
 
-    for module_path in MODULE_DEFINITIONS:
-        mod = importlib.import_module(module_path)
+    for module_path in discover_module_manifests():
+        manifest_module = importlib.import_module(module_path)
+        manifest = manifest_module.MODULE
+
+        if not manifest.get("key") or not manifest.get("name") or not manifest.get("register"):
+            continue
+
+        key = manifest["key"]
+
+        if key in seen_keys:
+            continue
+
+        seen_keys.add(key)
 
         result.append({
-            "key": mod.KEY,
-            "name": mod.NAME,
-            "menu": getattr(mod, "MENU", []),
-            "services": getattr(mod, "SERVICES", []),
-            "module": mod,
+            "key": key,
+            "name": manifest["name"],
+            "enabled_by_default": manifest.get("enabled_by_default", True),
+            "menu": manifest.get("menu", []),
+            "services": manifest.get("services", []),
+            "register": import_callable(manifest["register"]),
+            "description": manifest.get("description", ""),
+            "version": manifest.get("version", ""),
         })
 
     return result
 
-
 def load_modules():
     if not os.path.exists(MODULES_FILE):
-        save_modules(DEFAULT_MODULES)
+        save_modules(default_modules())
 
     with open(MODULES_FILE, "r", encoding="utf-8") as f:
         data = json.load(f)
 
-    final = DEFAULT_MODULES.copy()
+    final = default_modules()
     final.update(data)
     return final
 
@@ -115,7 +146,7 @@ def apply_modules():
 
 def register_enabled_modules(app, render_page):
     for item in enabled_modules_info():
-        item["module"].register(app, render_page)
+        item["register"](app, render_page)
 
 def module_required(name):
     def decorator(func):

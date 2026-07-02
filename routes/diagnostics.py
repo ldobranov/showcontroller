@@ -8,6 +8,7 @@ import time
 from flask import jsonify
 
 from logger import get_logs
+from routes.system import get_ip
 from services import eventbus
 from services.service_manager import service_status
 from services.modules import enabled_module_services
@@ -109,6 +110,7 @@ def get_core_diagnostics():
         "machine": platform.machine(),
         "raspberry_model": read_first_line("/proc/device-tree/model"),
         "hostname": command_output(["hostname"]),
+        "ip": get_ip(),
         "uptime": get_uptime(),
         "load_average": ", ".join(str(x) for x in os.getloadavg()),
         "temperature": get_cpu_temperature(),

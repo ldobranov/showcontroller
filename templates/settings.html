@@ -6,12 +6,6 @@
       <label>System name</label>
       <input name="name" value="{{ cfg.name }}">
 
-      <label>UDP Target IP</label>
-      <input name="td_ip" value="{{ cfg.touchdesigner.ip }}">
-
-      <label>UDP Target UDP Port</label>
-      <input name="td_port" value="{{ cfg.touchdesigner.port }}">
-
       <label>
         <input class="inline-checkbox" type="checkbox" name="logging_enabled"
                {% if cfg.get('logging_enabled', True) %}checked{% endif %}>
