@@ -6,7 +6,14 @@ from pathlib import Path
 
 from gpiozero import DigitalInputDevice
 
-from modules.video_player.cec import tv_power_on
+try:
+    from cec import tv_power_on
+except Exception:
+    def tv_power_on(log=None):
+        if log:
+            log("CEC: helper not available")
+        return False
+
 
 CONFIG_PATH = "/opt/showcontroller/config/video.json"
 VLC_HOST = "127.0.0.1"
