@@ -1,37 +1,41 @@
+import importlib
 import json
 import os
 import subprocess
 
+from functools import wraps
+from flask import abort
+
+
 MODULES_FILE = "/opt/showcontroller/modules.json"
 
-MODULE_SERVICES = {
-    "gpio": "showcontroller-gpio.service",
-    "video": "showcontroller-video-node.service",
-}
+MODULE_DEFINITIONS = [
+    "modules.gpio_controller.module",
+    "modules.video_player.module",
+]
 
 DEFAULT_MODULES = {
     "gpio": True,
-    "video": True
+    "video": True,
 }
 
-def apply_modules():
-    modules = load_modules()
 
-    for name, service in MODULE_SERVICES.items():
-        enabled = modules.get(name, False)
+def get_available_modules():
+    result = []
 
-        if enabled:
-            subprocess.run(
-                ["systemctl", "enable", "--now", service],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-        else:
-            subprocess.run(
-                ["systemctl", "disable", "--now", service],
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
+    for module_path in MODULE_DEFINITIONS:
+        mod = importlib.import_module(module_path)
+
+        result.append({
+            "key": mod.KEY,
+            "name": mod.NAME,
+            "menu": getattr(mod, "MENU", []),
+            "services": getattr(mod, "SERVICES", []),
+            "module": mod,
+        })
+
+    return result
+
 
 def load_modules():
     if not os.path.exists(MODULES_FILE):
@@ -58,3 +62,56 @@ def set_module_enabled(name, enabled):
     data = load_modules()
     data[name] = bool(enabled)
     save_modules(data)
+
+
+def enabled_modules_info():
+    enabled = load_modules()
+    return [
+        item for item in get_available_modules()
+        if enabled.get(item["key"], False)
+    ]
+
+
+def module_menu_items():
+    items = []
+
+    for item in enabled_modules_info():
+        items.extend(item["menu"])
+
+    return items
+
+
+def apply_modules():
+    enabled = load_modules()
+
+    for item in get_available_modules():
+        is_enabled = enabled.get(item["key"], False)
+
+        for service in item["services"]:
+            if is_enabled:
+                subprocess.run(
+                    ["systemctl", "enable", "--now", service],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+            else:
+                subprocess.run(
+                    ["systemctl", "disable", "--now", service],
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
+                )
+
+
+def register_enabled_modules(app, render_page):
+    for item in enabled_modules_info():
+        item["module"].register(app, render_page)
+
+def module_required(name):
+    def decorator(func):
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            if not module_enabled(name):
+                abort(404)
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator

@@ -5,7 +5,7 @@ from pathlib import Path
 
 from flask import redirect, request
 from werkzeug.utils import secure_filename
-
+from services.modules import module_required
 from logger import log
 
 
@@ -61,7 +61,9 @@ def restart_video_service():
 
 
 def register_video_routes(app, render_page):
+
     @app.route("/videos")
+    @module_required("video")
     def videos_page():
         return render_page(
             "videos.html",
@@ -71,6 +73,7 @@ def register_video_routes(app, render_page):
         )
 
     @app.route("/videos/upload", methods=["POST"])
+    @module_required("video")
     def videos_upload():
         file = request.files.get("media_file")
 
@@ -92,6 +95,7 @@ def register_video_routes(app, render_page):
         return redirect("/videos")
 
     @app.route("/videos/save", methods=["POST"])
+    @module_required("video")
     def videos_save():
         cfg = video_load_config()
 
@@ -102,7 +106,11 @@ def register_video_routes(app, render_page):
         cfg["idle"] = request.form.get("idle", "").strip()
         cfg["active_low"] = request.form.get("active_low") == "on"
         cfg["cec_enabled"] = request.form.get("cec_enabled") == "on"
-        cfg["audio_device"] = request.form.get("audio_device",cfg.get("audio_device", "hdmi:CARD=vc4hdmi,DEV=0")).strip()
+        cfg["audio_device"] = request.form.get(
+          "audio_device",
+          cfg.get("audio_device", "hdmi:CARD=vc4hdmi,DEV=0")
+        ).strip()
+
 
         video_save_config(cfg)
         log("VIDEOS config saved")
@@ -111,12 +119,14 @@ def register_video_routes(app, render_page):
         return redirect("/videos")
 
     @app.route("/videos/restart", methods=["POST"])
+    @module_required("video")
     def videos_restart():
         log("VIDEOS restart requested")
         restart_video_service()
         return redirect("/videos")
 
     @app.route("/videos/delete", methods=["POST"])
+    @module_required("video")
     def videos_delete():
         path = request.form.get("path", "").strip()
 
@@ -134,24 +144,28 @@ def register_video_routes(app, render_page):
         return redirect("/videos")
 
     @app.route("/videos/play", methods=["POST"])
+    @module_required("video")
     def videos_play():
         log("VIDEOS play main requested")
         restart_video_service()
         return redirect("/videos")
 
     @app.route("/videos/idle", methods=["POST"])
+    @module_required("video")
     def videos_idle():
         log("VIDEOS show idle requested")
         restart_video_service()
         return redirect("/videos")
 
     @app.route("/videos/tv-on", methods=["POST"])
+    @module_required("video")
     def videos_tv_on():
         log("VIDEOS TV ON requested")
         subprocess.Popen('echo "on 0" | cec-client -s -d 1', shell=True)
         return redirect("/videos")
 
     @app.route("/videos/tv-hdmi", methods=["POST"])
+    @module_required("video")
     def videos_tv_hdmi():
         log("VIDEOS TV HDMI requested")
         subprocess.Popen('echo "as" | cec-client -s -d 1', shell=True)

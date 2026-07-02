@@ -26,17 +26,12 @@
   <nav class="nav">
     <a href="/" class="{% if active_page == 'dashboard' %}active{% endif %}">Dashboard</a>
 
-    {% if modules.gpio %}
-      <a href="/inputs" class="{% if active_page == 'inputs' %}active{% endif %}">Inputs</a>
-    {% endif %}
-
-    <a href="/settings" class="{% if active_page == 'settings' %}active{% endif %}">Settings</a>
-
-    <a href="/logs" class="{% if active_page == 'logs' %}active{% endif %}">Logs</a>
-
-    {% if modules.video %}
-      <a href="/videos" class="{% if active_page == 'videos' %}active{% endif %}">Videos</a>
-    {% endif %}
+{% for item in module_menu %}
+<a href="{{ item.url }}"
+   class="{% if active_page == item.page %}active{% endif %}">
+    {{ item.label }}
+</a>
+{% endfor %}
 
     <a href="/diagnostics" class="{% if active_page == 'diagnostics' %}active{% endif %}">Diagnostics</a>
     <a href="/system" class="{% if active_page == 'system' %}active{% endif %}">System</a>

@@ -1,5 +1,6 @@
 import auth
-from services.modules import load_modules
+from services.modules import load_modules, module_menu_items, register_enabled_modules
+
 from flask import Flask, render_template, request, redirect, url_for
 from config import load_config, get_version
 from logger import log
@@ -7,8 +8,6 @@ from routes.auth import register_auth_routes
 from routes.diagnostics import register_diagnostics_routes
 from routes.main import register_main_routes
 from routes.system import get_ip, get_status, register_system_routes
-from routes.videos import register_video_routes
-
 
 app = Flask(__name__)
 app.secret_key = auth.get_secret_key()
@@ -19,6 +18,7 @@ def render_page(template_name, **context):
     return render_template(
         template_name,
         modules=load_modules(),
+        module_menu=module_menu_items(),
         cfg=cfg,
         status=get_status(),
         ip=get_ip(),
@@ -34,9 +34,9 @@ def render_page(template_name, **context):
 
 register_auth_routes(app)
 register_main_routes(app, render_page)
-register_video_routes(app, render_page)
 register_system_routes(app, render_page)
 register_diagnostics_routes(app, render_page)
+register_enabled_modules(app, render_page)
 
 if __name__ == "__main__":
     log("WEB STARTED")
