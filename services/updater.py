@@ -1,8 +1,11 @@
 import json
 import subprocess
 
+
 REPO_DIR = "/home/raspberry/showcontroller"
 INSTALLED_VERSION_FILE = "/opt/showcontroller/version.json"
+GIT_USER = "raspberry"
+
 
 _last_update_status = {
     "message": "",
@@ -24,7 +27,7 @@ def get_last_update_status():
 
 def run_git(args):
     result = subprocess.run(
-        ["git"] + args,
+        ["sudo", "-u", GIT_USER, "git"] + args,
         cwd=REPO_DIR,
         capture_output=True,
         text=True,
@@ -120,7 +123,7 @@ def install_update():
         return False, message
 
     subprocess.Popen(
-        ["sudo", "./update.sh"],
+        ["bash", "./update.sh"],
         cwd=REPO_DIR,
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
