@@ -51,6 +51,9 @@ IDLE_PATH = config.get("idle")
 CEC_ENABLED = config.get("cec_enabled", False)
 AUDIO_DEVICE = config.get("audio_device", "hdmi:CARD=vc4hdmi,DEV=0")
 
+IDLE_INDEX = 4
+VIDEO_INDEX = 3
+
 current_mode = None
 vlc_process = None
 
@@ -71,19 +74,27 @@ def tv_on():
 def start_vlc():
     global vlc_process
 
-    first_file = IDLE_PATH if IDLE_PATH and Path(IDLE_PATH).exists() else VIDEO_PATH
+    playlist = []
+
+    if IDLE_PATH and Path(IDLE_PATH).exists():
+        playlist.append(IDLE_PATH)
+    else:
+        playlist.append(VIDEO_PATH)
+
+    if VIDEO_PATH and Path(VIDEO_PATH).exists():
+        playlist.append(VIDEO_PATH)
 
     cmd = [
         "cvlc",
         "--fullscreen",
         "--no-video-title-show",
-        "--loop",
         "--quiet",
+        "--repeat",
         "--aout=alsa",
         f"--alsa-audio-device={AUDIO_DEVICE}",
         "--extraintf", "rc",
         "--rc-host", f"{VLC_HOST}:{VLC_PORT}",
-        first_file,
+        *playlist,
     ]
 
     log("Starting persistent VLC")
@@ -92,10 +103,10 @@ def start_vlc():
     for _ in range(50):
         if vlc_command("status", log_errors=False):
             log("VLC RC ready")
-            return
+            break
         time.sleep(0.1)
 
-    log("VLC RC not ready")
+    select_playlist_item(IDLE_INDEX)
 
 
 def stop_vlc():
@@ -129,17 +140,12 @@ def vlc_command(command, log_errors=True):
         return False
 
 
-def load_file(path):
-    if not path or not Path(path).exists():
-        log(f"File not found: {path}")
+def select_playlist_item(index):
+    if not vlc_command(f"goto {index}"):
+        log(f"Cannot switch to playlist item {index}")
         return
 
-    safe_path = str(Path(path))
-
-    vlc_command("stop")
-    vlc_command("clear")
-    vlc_command(f"add {safe_path}")
-    vlc_command("play")
+    vlc_command("play", log_errors=False)
 
 
 def set_idle():
@@ -150,7 +156,7 @@ def set_idle():
 
     current_mode = "idle"
     log("Mode: IDLE")
-    load_file(IDLE_PATH)
+    select_playlist_item(IDLE_INDEX)
 
 
 def set_active():
@@ -161,7 +167,7 @@ def set_active():
 
     current_mode = "active"
     log("Mode: ACTIVE")
-    load_file(VIDEO_PATH)
+    select_playlist_item(VIDEO_INDEX)
 
 
 log(f"Starting {NODE_NAME}")
