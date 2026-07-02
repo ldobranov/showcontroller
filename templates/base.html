@@ -101,9 +101,12 @@
     }
 
     function startEventStream() {
-      if (!window.EventSource) return;
+	  if (!window.EventSource) return;
 
-      const source = new EventSource('/events');
+	  const hasLiveInputs = document.querySelector('[data-live-input-name]');
+	  if (!hasLiveInputs) return;
+
+	  const source = new EventSource('/events');
 
       source.onmessage = function(event) {
         const data = JSON.parse(event.data);
