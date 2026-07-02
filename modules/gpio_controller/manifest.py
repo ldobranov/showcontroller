@@ -15,4 +15,8 @@ MODULE = {
     ],
     "description": "GPIO inputs, triggers and UDP output.",
     "version": "1.3.0",
+    "apt_packages": [
+        "python3-rpi.gpio"
+    ],
+    "installer": "modules.gpio_controller.install",
 }

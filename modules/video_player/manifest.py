@@ -16,4 +16,9 @@ MODULE = {
 
     "description": "Video playback node for show media.",
     "version": "1.3.0",
+    "apt_packages": [
+        "vlc",
+        "cec-utils"
+    ],
+    "installer": "modules.video_player.install",
 }

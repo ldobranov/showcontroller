@@ -1,88 +1,139 @@
 {% extends "base.html" %}
 {% block content %}
-  <div class="box">
-    <h2>System</h2>
-    
-<div class="card">
-    <h2>Node Mode</h2>
 
-  <div class="box">
-    <h2>Modules</h2>
+<section class="panel">
+  <h2>System</h2>
+  <p class="muted">System management and installed modules.</p>
+</section>
 
-    <form method="post" action="/system/modules">
-      <label>
-        <input type="checkbox" name="gpio" {% if modules.gpio %}checked{% endif %}>
-        GPIO Controller
-      </label>
+{% if request.args.get("module_msg") %}
+<section class="panel">
+  {% if request.args.get("module_ok") == "1" %}
+    <span class="badge ok">SUCCESS</span>
+  {% else %}
+    <span class="badge err">ERROR</span>
+  {% endif %}
+  {{ request.args.get("module_msg") }}
+</section>
+{% endif %}
 
-      <label>
-        <input type="checkbox" name="video" {% if modules.video %}checked{% endif %}>
-        Video Player
-      </label>
+<section class="grid">
 
-      <div class="actions">
-        <button type="submit" class="primary">Save modules</button>
+  <div class="panel">
+    <h3>Modules</h3>
+
+    <form id="modules-form" method="post" action="/system/modules"></form>
+
+    {% for mod in available_modules %}
+      <div class="row">
+        <label>
+          <input type="checkbox"
+                 form="modules-form"
+                 name="{{ mod.key }}"
+                 {% if mod.enabled %}checked{% endif %}>
+          <strong>{{ mod.name }}</strong>
+          {% if mod.version %}
+            <span class="muted">v{{ mod.version }}</span>
+          {% endif %}
+        </label>
+
+        {% if mod.dependencies_ok %}
+          <span class="badge ok">deps ok</span>
+        {% else %}
+          <span class="badge err">missing deps</span>
+        {% endif %}
       </div>
-    </form>
+
+      {% if mod.description %}
+        <p class="muted">{{ mod.description }}</p>
+      {% endif %}
+
+      {% if mod.apt_packages %}
+        <p class="muted">Packages: {{ mod.apt_packages | join(", ") }}</p>
+      {% endif %}
+
+      {% if mod.missing_packages %}
+        <form method="post" action="/system/modules/{{ mod.key }}/install-dependencies">
+          <button type="submit">Install module dependencies</button>
+        </form>
+      {% endif %}
+
+      <hr>
+    {% endfor %}
+
+    <button form="modules-form" class="primary" type="submit">
+      Save modules
+    </button>
   </div>
 
+  <div class="panel">
+    <h3>Node mode</h3>
+
     <form method="post" action="/system/mode/video">
-        <button type="submit">Switch to Video</button>
+      <button type="submit">Switch to Video</button>
     </form>
 
     <form method="post" action="/system/mode/gpio">
-        <button type="submit">Switch to GPIO</button>
+      <button type="submit">Switch to GPIO</button>
     </form>
-  </div>
 
-    <form method="post" action="/services/restart/web" style="display:inline">
+    <hr>
+
+    <form method="post" action="/services/restart/web">
       <button type="submit">Restart WEB</button>
     </form>
 
-    <form method="post" action="/system/reboot" style="display:inline">
+    <form method="post" action="/system/reboot">
       <button type="submit">Reboot</button>
     </form>
+
+    <hr>
+
+    <a href="/settings">
+      <button type="button">Settings</button>
+    </a>
   </div>
 
-  <div class="box">
-    <h2>Backup / Restore</h2>
-    <a href="/backup/config"><button type="button">Download Config</button></a>
+  <div class="panel">
+    <h3>Backup / Restore</h3>
+
+    <a href="/backup/config">
+      <button type="button">Download Config</button>
+    </a>
+
     <form method="post" action="/restore/config" enctype="multipart/form-data">
-      <label>Restore config.json</label>
       <input type="file" name="config_file" accept=".json">
       <button type="submit">Restore Config</button>
     </form>
   </div>
 
-  <div class="box">
-    <h2>Upgrade</h2>
+  <div class="panel">
+    <h3>Upgrade</h3>
 
-    <p>
-      Current version:
-      <b>{{ update.version or version }}</b>
-    </p>
+    <p>Current version: <b>{{ update.version or version }}</b></p>
 
     {% if update.message %}
-      <p><b>{{ update.message }}</b></p>
+      <p>{{ update.message }}</p>
 
       {% if update.installed or update.remote %}
         <p class="muted">
-          Installed commit: {{ update.installed or "-" }}<br>
-          Latest commit: {{ update.remote or "-" }}
+          Installed: {{ update.installed or "-" }}<br>
+          Latest: {{ update.remote or "-" }}
         </p>
       {% endif %}
     {% endif %}
 
-    <form method="post" action="/system/check-updates" style="display:inline">
+    <form method="post" action="/system/check-updates">
       <button type="submit">Check for updates</button>
     </form>
 
     {% if update.update_available %}
-      <form method="post" action="/system/install-update" style="display:inline">
-        <button type="submit" class="primary">Update now</button>
+      <form method="post" action="/system/install-update">
+        <button class="primary" type="submit">Update now</button>
       </form>
     {% endif %}
   </div>
 
+</section>
 
 {% endblock %}

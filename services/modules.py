@@ -32,6 +32,40 @@ def discover_module_manifests():
 
     return manifests
 
+def module_installer_status(item):
+    installer_path = item.get("installer")
+
+    if not installer_path:
+        return {
+            "packages": [],
+            "missing": [],
+            "ok": True,
+        }
+
+    installer = importlib.import_module(installer_path)
+    return installer.status()
+
+
+def install_module_dependencies(module_key):
+    for item in get_available_modules():
+        if item["key"] != module_key:
+            continue
+
+        installer_path = item.get("installer")
+        if not installer_path:
+            return True, "Module has no installer."
+
+        try:
+            installer = importlib.import_module(installer_path)
+            result = installer.install()
+
+            return True, result.get("message", "Dependencies installed.")
+
+        except Exception as ex:
+            return False, str(ex)
+
+    return False, "Unknown module."
+
 def import_callable(path):
     module_path, function_name = path.rsplit(".", 1)
     module = importlib.import_module(module_path)
@@ -64,6 +98,7 @@ def get_available_modules():
             "register": import_callable(manifest["register"]),
             "description": manifest.get("description", ""),
             "version": manifest.get("version", ""),
+            "installer": manifest.get("installer"),
         })
 
     return result
@@ -123,6 +158,23 @@ def enabled_module_services():
             })
 
     return services
+
+def modules_with_dependency_status():
+    enabled = load_modules()
+    result = []
+
+    for item in get_available_modules():
+        dep_status = module_installer_status(item)
+
+        result.append({
+            **item,
+            "enabled": enabled.get(item["key"], False),
+            "apt_packages": dep_status.get("packages", []),
+            "missing_packages": dep_status.get("missing", []),
+            "dependencies_ok": dep_status.get("ok", True),
+        })
+
+    return result
 
 def apply_modules():
     enabled = load_modules()

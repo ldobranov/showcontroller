@@ -1,7 +1,15 @@
+from flask import redirect, request, send_file
+
+import engine
+from config import load_config
+from logger import log
+from services.backup import config_backup_path, restore_config_file
 from services.modules import (
-    load_modules,
-    set_module_enabled,
     apply_modules,
+    load_modules,
+    modules_with_dependency_status,
+    set_module_enabled,
+    install_module_dependencies,
 )
 from services.service_manager import (
     disable_service,
@@ -12,12 +20,7 @@ from services.service_manager import (
     service_status,
 )
 from services.updater import check_for_updates, get_last_update_status, install_update
-from services.backup import config_backup_path, restore_config_file
-from flask import redirect, request, send_file
-from config import load_config
-from logger import log
 
-import engine
 
 def get_status():
     cfg = load_config()
@@ -44,27 +47,34 @@ def get_status():
         "mode_active": mode_active,
     }
 
-def register_system_routes(app, render_page):
 
+def register_system_routes(app, render_page):
     @app.route("/system")
     def system_page():
         return render_page(
             "system.html",
             active_page="system",
             update=get_last_update_status(),
+            available_modules=modules_with_dependency_status(),
         )
 
     @app.route("/system/modules", methods=["POST"])
     def system_modules():
+        for mod in modules_with_dependency_status():
+            set_module_enabled(mod["key"], request.form.get(mod["key"]) == "on")
 
-      set_module_enabled("gpio", request.form.get("gpio") == "on")
-      set_module_enabled("video", request.form.get("video") == "on")
+        apply_modules()
+        log("SYSTEM modules updated")
+        return redirect("/system")
 
-      apply_modules()
+    @app.route("/system/modules/<module_key>/install-dependencies", methods=["POST"])
+    def system_install_module_dependencies(module_key):
+        ok, message = install_module_dependencies(module_key)
+        log(f"MODULE {module_key}: {message}")
 
-      log("SYSTEM modules updated")
-
-      return redirect("/system")
+        return redirect(
+            f"/system?module_msg={message}&module_ok={1 if ok else 0}"
+        )
 
     @app.route("/system/mode/video", methods=["POST"])
     def system_mode_video():
@@ -82,11 +92,11 @@ def register_system_routes(app, render_page):
 
     @app.route("/backup/config")
     def backup_config():
-      return send_file(
-        config_backup_path(),
-        as_attachment=True,
-        download_name="showcontroller-config.json",
-      )
+        return send_file(
+            config_backup_path(),
+            as_attachment=True,
+            download_name="showcontroller-config.json",
+        )
 
     @app.route("/restore/config", methods=["POST"])
     def restore_config():
@@ -128,4 +138,3 @@ def register_system_routes(app, render_page):
         ok, message = install_update()
         log(f"UPDATE install: {message}")
         return redirect("/system")
-
