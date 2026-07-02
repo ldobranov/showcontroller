@@ -4,7 +4,6 @@
     <h2>System</h2>
     <p>Raspberry IP: <b>{{ ip }}</b></p>
     <p>UDP Target: <b>{{ cfg.touchdesigner.ip }}:{{ cfg.touchdesigner.port }}</b></p>
-    <p class="muted">Reload Triggers applies GPIO configuration changes without restarting the service.</p>
     
 <div class="card">
     <h2>Node Mode</h2>
@@ -36,17 +35,12 @@
     <form method="post" action="/system/mode/gpio">
         <button type="submit">Switch to GPIO</button>
     </form>
-</div>
+  </div>
 
     <form method="post" action="/services/restart/web" style="display:inline">
       <button type="submit">Restart WEB</button>
     </form>
-    <form method="post" action="/system/reload-inputs" style="display:inline">
-      <button type="submit" class="primary">Reload Triggers</button>
-    </form>
-    <form method="post" action="/services/restart/gpio" style="display:inline">
-      <button type="submit">Restart GPIO</button>
-    </form>
+
     <form method="post" action="/system/reboot" style="display:inline">
       <button type="submit">Reboot</button>
     </form>

@@ -2,7 +2,8 @@ import auth
 from services.modules import load_modules, module_menu_items, register_enabled_modules
 
 from flask import Flask, render_template, request, redirect, url_for
-from config import load_config, get_version
+from config import load_config
+from services.version import get_version, get_version_info
 from logger import log
 from routes.auth import register_auth_routes
 from routes.diagnostics import register_diagnostics_routes
@@ -29,6 +30,7 @@ def render_page(template_name, **context):
         password_error=request.args.get("password_error"),
         **context,
         version=get_version(),
+        version_info=get_version_info(),
     )
 
 

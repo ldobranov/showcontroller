@@ -97,11 +97,6 @@ def register_system_routes(app, render_page):
             engine.request_gpio_reload("config restored")
         return redirect("/system")
 
-    @app.route("/system/reload-inputs", methods=["POST"])
-    def reload_inputs():
-        engine.request_gpio_reload("manual from system page")
-        return redirect("/system")
-
     @app.route("/services/restart/<name>", methods=["POST"])
     def restart_service(name):
         if name not in ["web", "gpio", "video-node"]:

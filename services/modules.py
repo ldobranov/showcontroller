@@ -80,6 +80,18 @@ def module_menu_items():
 
     return items
 
+def enabled_module_services():
+    services = []
+
+    for item in enabled_modules_info():
+        for service in item["services"]:
+            services.append({
+                "module_key": item["key"],
+                "module_name": item["name"],
+                "service": service,
+            })
+
+    return services
 
 def apply_modules():
     enabled = load_modules()
@@ -100,7 +112,6 @@ def apply_modules():
                     stdout=subprocess.DEVNULL,
                     stderr=subprocess.DEVNULL,
                 )
-
 
 def register_enabled_modules(app, render_page):
     for item in enabled_modules_info():

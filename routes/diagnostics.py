@@ -1,106 +1,165 @@
+import os
+import platform
+import shutil
 import subprocess
+import sys
+import time
 
-from flask import Response, jsonify, redirect, request
+from flask import jsonify
 
-import engine
+from logger import get_logs
 from services import eventbus
-from config import load_config
-from logger import get_logs, log
+from services.service_manager import service_status
+from services.modules import enabled_module_services
+
+def read_first_line(path, default="unknown"):
+    try:
+        with open(path, "r") as f:
+            return f.readline().strip()
+    except Exception:
+        return default
 
 
-def ping_host(host):
+def command_output(command, default="unknown"):
     try:
         result = subprocess.run(
-            ["ping", "-c", "1", "-W", "1", host],
+            command,
             capture_output=True,
             text=True,
+            timeout=2,
         )
-        return result.returncode == 0
+        output = result.stdout.strip()
+        return output if output else default
     except Exception:
-        return False
+        return default
 
 
-def config_diagnostics():
-    cfg = load_config()
-    issues = []
-    inputs = cfg.get("inputs", [])
+def get_cpu_temperature():
+    raw = read_first_line("/sys/class/thermal/thermal_zone0/temp", "")
+    try:
+        return round(int(raw) / 1000, 1)
+    except Exception:
+        return None
 
-    if not cfg.get("touchdesigner", {}).get("ip"):
-        issues.append("Missing UDP target IP")
-    if not cfg.get("touchdesigner", {}).get("port"):
-        issues.append("Missing UDP target port")
 
-    seen_gpios = {}
-    for index, inp in enumerate(inputs, start=1):
-        name = inp.get("name", f"Input {index}")
-        if not inp.get("enabled", True):
-            continue
+def get_uptime():
+    try:
+        seconds = int(float(read_first_line("/proc/uptime", "0").split()[0]))
+        days = seconds // 86400
+        hours = (seconds % 86400) // 3600
+        minutes = (seconds % 3600) // 60
 
-        gpio = inp.get("gpio")
-        if gpio is None or str(gpio).strip() == "":
-            issues.append(f"{name}: missing GPIO")
-        else:
-            gpio_key = str(gpio)
-            if gpio_key in seen_gpios:
-                issues.append(f"GPIO{gpio_key} is used by both {seen_gpios[gpio_key]} and {name}")
-            seen_gpios[gpio_key] = name
+        if days:
+            return f"{days}d {hours}h {minutes}m"
+        if hours:
+            return f"{hours}h {minutes}m"
+        return f"{minutes}m"
+    except Exception:
+        return "unknown"
 
-        mode = inp.get("mode", "single")
-        if mode == "sequence" and not inp.get("sequence"):
-            issues.append(f"{name}: sequence mode without sequence")
-        if mode == "single" and not inp.get("message"):
-            issues.append(f"{name}: single mode without message")
 
-    return issues
+def get_memory_info():
+    total = available = None
 
+    try:
+        with open("/proc/meminfo", "r") as f:
+            for line in f:
+                if line.startswith("MemTotal:"):
+                    total = int(line.split()[1]) * 1024
+                elif line.startswith("MemAvailable:"):
+                    available = int(line.split()[1]) * 1024
+    except Exception:
+        pass
+
+    if total is None or available is None:
+        return {
+            "total": None,
+            "available": None,
+            "used_percent": None,
+        }
+
+    used = total - available
+
+    return {
+        "total": total,
+        "available": available,
+        "used_percent": round((used / total) * 100, 1),
+    }
+
+def format_bytes(value):
+    try:
+        value = float(value)
+    except Exception:
+        return "unknown"
+
+    for unit in ["B", "KB", "MB", "GB", "TB"]:
+        if value < 1024:
+            return f"{value:.1f} {unit}"
+        value /= 1024
+
+    return f"{value:.1f} PB"
+
+
+def get_core_diagnostics():
+    disk = shutil.disk_usage("/")
+
+    return {
+        "python": sys.version.split()[0],
+        "platform": platform.platform(),
+        "machine": platform.machine(),
+        "raspberry_model": read_first_line("/proc/device-tree/model"),
+        "hostname": command_output(["hostname"]),
+        "uptime": get_uptime(),
+        "load_average": ", ".join(str(x) for x in os.getloadavg()),
+        "temperature": get_cpu_temperature(),
+        "memory": get_memory_info(),
+        "disk": {
+            "total": disk.total,
+            "used": disk.used,
+            "free": disk.free,
+            "used_percent": round((disk.used / disk.total) * 100, 1),
+        },
+        "services": get_core_services(),
+    }
+
+
+def get_core_services():
+    services = [
+        {
+            "name": "WEB",
+            "service": "showcontroller-web.service",
+            "status": service_status("showcontroller-web.service"),
+            "type": "core",
+        }
+    ]
+
+    for item in enabled_module_services():
+        service_name = item["service"]
+
+        services.append({
+            "name": item["module_name"],
+            "service": service_name,
+            "status": service_status(service_name),
+            "type": "module",
+        })
+
+    return services
 
 def register_diagnostics_routes(app, render_page):
     @app.route("/diagnostics")
     def diagnostics_page():
-        cfg = load_config()
-        td_ip = cfg.get("touchdesigner", {}).get("ip", "")
-        td_online = ping_host(td_ip) if td_ip else False
-
         return render_page(
             "diagnostics.html",
             active_page="diagnostics",
-            inputs=engine.get_inputs_with_state(),
-            td_online=td_online,
-            issues=config_diagnostics(),
+            diagnostics=get_core_diagnostics(),
             logs=get_logs(20),
+            format_bytes=format_bytes,
         )
 
     @app.route("/api/gpio/status")
     def api_gpio_status():
         return jsonify(eventbus.gpio_status_payload())
 
-    @app.route("/events")
-    def events_stream():
-        return Response(
-            eventbus.gpio_event_stream(),
-            mimetype="text/event-stream",
-            headers={
-                "Cache-Control": "no-cache",
-                "X-Accel-Buffering": "no",
-            },
-        )
-
     @app.route("/api/routes")
     def api_routes():
         return jsonify(sorted(str(rule) for rule in app.url_map.iter_rules()))
-
-    @app.route("/diagnostics/send_udp", methods=["POST"])
-    def diagnostics_send_udp():
-        msg = request.form.get("message", "20,1").strip()
-        delay = float(request.form.get("delay", "0.2") or 0.2)
-        engine.send_press_release(msg, delay)
-        log(f"DIAG UDP test message={msg} delay={delay}")
-        return redirect("/diagnostics")
-
-    @app.route("/diagnostics/fire_input", methods=["POST"])
-    def diagnostics_fire_input():
-        input_name = request.form.get("input_name", "").strip()
-        if input_name:
-            engine.trigger_input_by_name(input_name)
-            log(f"DIAG input test {input_name}")
-        return redirect("/diagnostics")

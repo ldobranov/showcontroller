@@ -1,41 +1,64 @@
 {% extends "base.html" %}
 {% block content %}
-  <div class="box">
-    <h2>Dashboard</h2>
-    <p>UDP Target: <b>{{ cfg.touchdesigner.ip }}:{{ cfg.touchdesigner.port }}</b></p>
-    <p>Raspberry IP: <b>{{ ip }}</b></p>
-    <p>Current first input: <code>{{ current }}</code></p>
+
+<section class="panel">
+  <h2>Dashboard</h2>
+  <p class="muted">ShowController Core status</p>
+</section>
+
+<section class="grid">
+  <div class="panel">
+    <h3>Version</h3>
+
+    <p><strong>Installed:</strong> {{ version_info.version }}</p>
+    <p><strong>Branch:</strong> {{ version_info.branch }}</p>
+    <p><strong>Commit:</strong> {{ version_info.commit }}</p>
+    <p>
+      <strong>Git status:</strong>
+      {% if version_info.dirty %}
+        <span class="badge err">dirty</span>
+      {% else %}
+        <span class="badge ok">clean</span>
+      {% endif %}
+    </p>
   </div>
 
-  <div class="box">
-    <h3>Triggers status</h3>
-    {% for inp in inputs %}
-      <div class="input-row" data-live-input-name="{{ inp.name }}">
-        <b>{{ inp.name }}</b>
-        <span class="pill">GPIO{{ inp.gpio }}</span>
-        <span class="pill">{{ inp.mode }}</span>
-        <span class="pill">trigger={{ inp.get('trigger', 'release') }}</span>
-        <span class="live-status {% if inp.pressed %}ok{% else %}muted{% endif %}">{{ "PRESSED" if inp.pressed else "RELEASED" }}</span>
-        <span class="live-event">last: {{ inp.get('last_event', '-') }} {{ inp.get('last_event_time', '') }}</span>
-        <span class="live-count">press: {{ inp.get('press_count', 0) }} / release: {{ inp.get('release_count', 0) }}</span>
+  <div class="panel">
+    <h3>Running modules</h3>
 
-        <div class="actions">
-          <form method="post" action="/next" style="display:inline">
-            <input type="hidden" name="input_name" value="{{ inp.name }}">
-            <button type="submit" class="primary">TRIGGER</button>
-          </form>
-          <form method="post" action="/reset" style="display:inline">
-            <input type="hidden" name="input_name" value="{{ inp.name }}">
-            <button type="submit">RESET</button>
-          </form>
+    {% if running_modules %}
+      {% for mod in running_modules %}
+        <div class="row">
+          <div>
+            <strong>{{ mod.name }}</strong>
+
+            {% if mod.services %}
+              {% for svc in mod.services %}
+                <br>
+                <span class="muted">{{ svc.name }}: {{ svc.status }}</span>
+              {% endfor %}
+            {% else %}
+              <br>
+              <span class="muted">No service</span>
+            {% endif %}
+          </div>
+
+          {% set has_error = mod.services | selectattr("status", "ne", "active") | list | length > 0 %}
+          <span class="badge {% if has_error %}err{% else %}ok{% endif %}">
+            {% if has_error %}issue{% else %}running{% endif %}
+          </span>
         </div>
-      </div>
-    {% endfor %}
+      {% endfor %}
+    {% else %}
+      <p class="muted">No modules enabled.</p>
+    {% endif %}
   </div>
 
-  <div class="box">
-    <h3>Recent log</h3>
-    <pre>{% for l in logs %}{{ l }}
+  <div class="panel">
+    <h3>Recent logs</h3>
+    <pre>{% for line in logs %}{{ line }}
 {% endfor %}</pre>
   </div>
+</section>
+
 {% endblock %}

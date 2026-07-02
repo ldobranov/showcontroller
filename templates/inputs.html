@@ -3,6 +3,20 @@
   <div class="box">
     <h2>Inputs</h2>
 
+    <div class="actions">
+      <a href="/gpio/diagnostics">
+        <button type="button">GPIO Diagnostics</button>
+      </a>
+
+      <form method="post" action="/gpio/reload-inputs" style="display:inline">
+        <button type="submit" class="primary">Reload Triggers</button>
+      </form>
+
+      <form method="post" action="/gpio/restart" style="display:inline">
+        <button type="submit">Restart GPIO</button>
+      </form>
+    </div>
+
     {% for inp in inputs %}
       <div class="input-row" data-live-input-name="{{ inp.name }}">
         <b>{{ inp.name }}</b>

@@ -1,0 +1,26 @@
+{% extends "base.html" %}
+{% block content %}
+
+<section class="panel">
+  <h2>GPIO Diagnostics</h2>
+  <p class="muted">Live GPIO input state.</p>
+</section>
+
+<section class="panel">
+  <h3>Inputs</h3>
+
+  {% for inp in inputs %}
+    <div
+      class="live-input row"
+      data-input-id="{{ inp.id }}"
+      data-active="{{ 1 if inp.active else 0 }}"
+    >
+      <strong>{{ inp.name }}</strong>
+      <span class="badge {% if inp.active %}ok{% else %}muted{% endif %}">
+        {% if inp.active %}ON{% else %}OFF{% endif %}
+      </span>
+    </div>
+  {% endfor %}
+</section>
+
+{% endblock %}

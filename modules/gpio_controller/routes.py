@@ -1,8 +1,9 @@
-from flask import redirect, request
-
-import engine
+from flask import render_template, request, redirect
+from logger import log
+from services.service_manager import restart_service as system_restart_service
 from services.modules import module_required
 
+import engine
 
 def register_gpio_routes(app, render_page):
     @app.route("/triggers")
@@ -51,3 +52,28 @@ def register_gpio_routes(app, render_page):
         else:
             engine.reset_first_input()
         return redirect(request.referrer or "/")
+
+
+    @app.route("/diagnostics")
+    def gpio_diagnostics():
+        import engine
+
+        return render_template(
+            "gpio_diagnostics.html",
+            inputs=engine.get_inputs_with_state(),
+            active_page="gpio_diagnostics",
+        )
+
+
+    @app.route("/gpio/reload-inputs", methods=["POST"])
+    @module_required("gpio")
+    def gpio_reload_inputs():
+        engine.request_gpio_reload("manual from gpio page")
+        return redirect("/triggers")
+
+    @app.route("/gpio/restart", methods=["POST"])
+    @module_required("gpio")
+    def gpio_restart_service():
+        log("GPIO restart requested from gpio page")
+        system_restart_service("showcontroller-gpio")
+        return redirect("/triggers")

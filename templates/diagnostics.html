@@ -1,70 +1,67 @@
 {% extends "base.html" %}
 {% block content %}
-  <div class="box">
-    <h2>Diagnostics</h2>
-    <p>UDP Target: <b>{{ cfg.touchdesigner.ip }}:{{ cfg.touchdesigner.port }}</b>
-      {% if td_online %}
-        <span class="ok">ONLINE</span>
-      {% else %}
-        <span class="danger">NO PING</span>
-      {% endif %}
-    </p>
-    <p class="muted">UDP may still work even when ping is blocked by a firewall. This is only a quick network check.</p>
-  </div>
 
-  <div class="box">
-    <h3>Config check</h3>
-    {% if issues %}
-      <ul>
-        {% for issue in issues %}
-          <li class="warn">{{ issue }}</li>
-        {% endfor %}
-      </ul>
+<section class="panel">
+  <h2>Core Diagnostics</h2>
+  <p class="muted">System and service information for ShowController Core.</p>
+</section>
+
+<section class="grid">
+  <div class="panel">
+    <h3>System</h3>
+
+    <p><strong>Hostname:</strong> {{ diagnostics.hostname }}</p>
+    <p><strong>Platform:</strong> {{ diagnostics.platform }}</p>
+    <p><strong>Machine:</strong> {{ diagnostics.machine }}</p>
+    <p><strong>Raspberry model:</strong> {{ diagnostics.raspberry_model }}</p>
+    <p><strong>Python:</strong> {{ diagnostics.python }}</p>
+    <p><strong>Uptime:</strong> {{ diagnostics.uptime }}</p>
+    <p><strong>Load average:</strong> {{ diagnostics.load_average }}</p>
+
+    {% if diagnostics.temperature %}
+      <p><strong>CPU temperature:</strong> {{ diagnostics.temperature }} °C</p>
     {% else %}
-      <p class="ok">No obvious config issues.</p>
+      <p><strong>CPU temperature:</strong> unknown</p>
     {% endif %}
   </div>
 
-  <div class="box">
-    <h3>UDP Test</h3>
-    <form method="post" action="/diagnostics/send_udp">
-      <label>Message base</label>
-      <input name="message" value="20,1">
-      <label>Press/Release delay seconds</label>
-      <input name="delay" value="0.2">
-      <button type="submit" class="primary">Send press/release test</button>
-    </form>
-    <p class="muted">Sends <code>20,1</code>, waits for the configured delay, then sends <code>20,0</code>.</p>
+  <div class="panel">
+    <h3>Memory</h3>
+    <p><strong>Total:</strong> {{ format_bytes(diagnostics.memory.total) }}</p>
+    <p><strong>Available:</strong> {{ format_bytes(diagnostics.memory.available) }}</p>
+    <p><strong>Used:</strong> {{ diagnostics.memory.used_percent }}%</p>
   </div>
 
-  <div class="box">
-    <h3>Input Tests</h3>
-    {% for inp in inputs %}
-      <div class="input-row" data-live-input-name="{{ inp.name }}">
-        <b>{{ inp.name }}</b>
-        <span class="pill">GPIO{{ inp.gpio }}</span>
-        <span class="pill">{{ inp.mode }}</span>
-        <span class="pill">trigger={{ inp.get('trigger', 'release') }}</span>
-        {% if inp.get('enabled', True) %}
-          <span class="ok">ENABLED</span>
-        {% else %}
-          <span class="muted">DISABLED</span>
-        {% endif %}
-        <span class="live-status {% if inp.pressed %}ok{% else %}muted{% endif %}">{{ "PRESSED" if inp.pressed else "RELEASED" }}</span>
-        <span class="live-event">last: {{ inp.get('last_event', '-') }} {{ inp.get('last_event_time', '') }}</span>
-        <span class="live-count">press: {{ inp.get('press_count', 0) }} / release: {{ inp.get('release_count', 0) }}</span>
-
-        <form method="post" action="/diagnostics/fire_input" style="display:inline">
-          <input type="hidden" name="input_name" value="{{ inp.name }}">
-          <button type="submit">Fire input</button>
-        </form>
-      </div>
-    {% endfor %}
+  <div class="panel">
+    <h3>Disk</h3>
+    <p><strong>Total:</strong> {{ format_bytes(diagnostics.disk.total) }}</p>
+    <p><strong>Used:</strong> {{ format_bytes(diagnostics.disk.used) }}</p>
+    <p><strong>Free:</strong> {{ format_bytes(diagnostics.disk.free) }}</p>
+    <p><strong>Used:</strong> {{ diagnostics.disk.used_percent }}%</p>
   </div>
 
-  <div class="box">
-    <h3>Recent diagnostic log</h3>
-    <pre>{% for l in logs %}{{ l }}
+  <div class="panel">
+    <h3>Services</h3>
+
+{% for svc in diagnostics.services %}
+  <div class="row">
+    <div>
+      <strong>{{ svc.name }}</strong><br>
+      <span class="muted">{{ svc.service }}</span>
+    </div>
+
+    <span class="badge {% if svc.status == 'active' %}ok{% else %}err{% endif %}">
+      {{ svc.status }}
+    </span>
+  </div>
+{% endfor %}
+  </div>
+</section>
+
+<section class="panel">
+  <h3>Recent logs</h3>
+  <pre>{% for line in logs %}{{ line }}
 {% endfor %}</pre>
-  </div>
+</section>
+
 {% endblock %}

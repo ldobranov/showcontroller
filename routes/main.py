@@ -1,17 +1,36 @@
 from flask import redirect, request
 
-import engine
 from logger import clear_logs, get_logs
+from services.modules import enabled_modules_info, enabled_module_services
+from services.service_manager import service_status
 
 
 def register_main_routes(app, render_page):
+    def get_dashboard_modules():
+        services_by_module = {}
+
+        for item in enabled_module_services():
+            services_by_module.setdefault(item["module_key"], []).append({
+                "name": item["service"],
+                "status": service_status(item["service"]),
+            })
+
+        modules = []
+
+        for item in enabled_modules_info():
+            modules.append({
+                "key": item["key"],
+                "name": item["name"],
+                "services": services_by_module.get(item["key"], []),
+            })
+
+        return modules
+
     @app.route("/")
     def dashboard():
-        first_input = engine.get_first_input()
         return render_page(
             "dashboard.html",
-            current=engine.get_current_message(first_input),
-            inputs=engine.get_inputs_with_state(),
+            running_modules=get_dashboard_modules(),
             logs=get_logs(8),
             active_page="dashboard",
         )
@@ -22,6 +41,7 @@ def register_main_routes(app, render_page):
 
     @app.route("/settings/save", methods=["POST"])
     def save_settings():
+        import engine
         engine.save_settings_from_form(request.form)
         return redirect("/settings")
 
