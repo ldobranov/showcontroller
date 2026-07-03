@@ -7,10 +7,12 @@ from functools import wraps
 from flask import abort
 from pathlib import Path
 
+
 MODULES_FILE = "/opt/showcontroller/modules.json"
 
 BASE_DIR = Path(__file__).resolve().parents[1]
 MODULES_DIR = BASE_DIR / "modules"
+
 
 def default_modules():
     return {
@@ -18,8 +20,12 @@ def default_modules():
         for item in get_available_modules()
     }
 
+
 def discover_module_manifests():
     manifests = []
+
+    if not MODULES_DIR.exists():
+        return manifests
 
     for path in sorted(MODULES_DIR.iterdir()):
         if not path.is_dir():
@@ -32,6 +38,7 @@ def discover_module_manifests():
 
     return manifests
 
+
 def module_installer_status(item):
     installer_path = item.get("installer")
 
@@ -42,8 +49,16 @@ def module_installer_status(item):
             "ok": True,
         }
 
-    installer = importlib.import_module(installer_path)
-    return installer.status()
+    try:
+        installer = importlib.import_module(installer_path)
+        return installer.status()
+    except Exception as exc:
+        return {
+            "packages": item.get("apt_packages", []),
+            "missing": item.get("apt_packages", []),
+            "ok": False,
+            "error": str(exc),
+        }
 
 
 def install_module_dependencies(module_key):
@@ -66,25 +81,34 @@ def install_module_dependencies(module_key):
 
     return False, "Unknown module."
 
+
 def import_callable(path):
     module_path, function_name = path.rsplit(".", 1)
     module = importlib.import_module(module_path)
     return getattr(module, function_name)
+
 
 def get_available_modules():
     result = []
     seen_keys = set()
 
     for module_path in discover_module_manifests():
-        manifest_module = importlib.import_module(module_path)
-        manifest = manifest_module.MODULE
+        try:
+            manifest_module = importlib.import_module(module_path)
+            manifest = manifest_module.MODULE
 
-        if not manifest.get("key") or not manifest.get("name") or not manifest.get("register"):
-            continue
+            if not manifest.get("key") or not manifest.get("name") or not manifest.get("register"):
+                continue
 
-        key = manifest["key"]
+            key = manifest["key"]
 
-        if key in seen_keys:
+            if key in seen_keys:
+                continue
+
+            register = import_callable(manifest["register"])
+
+        except Exception as exc:
+            print(f"[modules] failed loading {module_path}: {exc}", flush=True)
             continue
 
         seen_keys.add(key)
@@ -95,20 +119,25 @@ def get_available_modules():
             "enabled_by_default": manifest.get("enabled_by_default", True),
             "menu": manifest.get("menu", []),
             "services": manifest.get("services", []),
-            "register": import_callable(manifest["register"]),
+            "register": register,
             "description": manifest.get("description", ""),
             "version": manifest.get("version", ""),
+            "apt_packages": manifest.get("apt_packages", []),
             "installer": manifest.get("installer"),
         })
 
     return result
 
+
 def load_modules():
     if not os.path.exists(MODULES_FILE):
         save_modules(default_modules())
 
-    with open(MODULES_FILE, "r", encoding="utf-8") as f:
-        data = json.load(f)
+    try:
+        with open(MODULES_FILE, "r", encoding="utf-8") as f:
+            data = json.load(f)
+    except Exception:
+        data = {}
 
     final = default_modules()
     final.update(data)
@@ -116,6 +145,7 @@ def load_modules():
 
 
 def save_modules(data):
+    os.makedirs(os.path.dirname(MODULES_FILE), exist_ok=True)
     with open(MODULES_FILE, "w", encoding="utf-8") as f:
         json.dump(data, f, ensure_ascii=False, indent=2)
 
@@ -146,6 +176,7 @@ def module_menu_items():
 
     return items
 
+
 def enabled_module_services():
     services = []
 
@@ -159,6 +190,7 @@ def enabled_module_services():
 
     return services
 
+
 def modules_with_dependency_status():
     enabled = load_modules()
     result = []
@@ -169,12 +201,14 @@ def modules_with_dependency_status():
         result.append({
             **item,
             "enabled": enabled.get(item["key"], False),
-            "apt_packages": dep_status.get("packages", []),
+            "apt_packages": dep_status.get("packages", item.get("apt_packages", [])),
             "missing_packages": dep_status.get("missing", []),
             "dependencies_ok": dep_status.get("ok", True),
+            "dependency_error": dep_status.get("error", ""),
         })
 
     return result
+
 
 def apply_modules():
     enabled = load_modules()
@@ -196,9 +230,11 @@ def apply_modules():
                     stderr=subprocess.DEVNULL,
                 )
 
+
 def register_enabled_modules(app, render_page):
     for item in enabled_modules_info():
         item["register"](app, render_page)
+
 
 def module_required(name):
     def decorator(func):

@@ -1,6 +1,6 @@
 from .manifest import MODULE
 from services import eventbus
-from flask import render_template, request, redirect, Response
+from flask import request, redirect, Response
 from logger import log
 from services.service_manager import restart_service as system_restart_service
 from services.modules import module_required
@@ -79,11 +79,10 @@ def register_gpio_routes(app, render_page):
         return redirect(request.referrer or "/")
 
 
-    @app.route("/diagnostics")
+    @app.route("/gpio/diagnostics")
+    @module_required(MODULE["key"])
     def gpio_diagnostics():
-        import engine
-
-        return render_template(
+        return render_page(
             "gpio_diagnostics.html",
             inputs=engine.get_inputs_with_state(),
             active_page="gpio_diagnostics",

@@ -52,6 +52,10 @@
         <p class="muted">Packages: {{ mod.apt_packages | join(", ") }}</p>
       {% endif %}
 
+      {% if mod.dependency_error %}
+        <p class="muted">Dependency check error: {{ mod.dependency_error }}</p>
+      {% endif %}
+
       {% if mod.missing_packages %}
         <form method="post" action="/system/modules/{{ mod.key }}/install-dependencies">
           <button type="submit">Install module dependencies</button>

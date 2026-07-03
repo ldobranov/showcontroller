@@ -6,7 +6,7 @@ from logger import log
 from services.backup import config_backup_path, restore_config_file
 from services.modules import (
     apply_modules,
-    load_modules,
+    enabled_module_services,
     modules_with_dependency_status,
     set_module_enabled,
     install_module_dependencies,
@@ -26,25 +26,18 @@ def get_status():
     cfg = load_config()
 
     web = service_status("showcontroller-web")
-    gpio = service_status("showcontroller-gpio")
-    video = service_status("showcontroller-video-node")
+    active_modules = []
 
-    if video == "active":
-        mode = "Video Player"
-        mode_active = True
-    elif gpio == "active":
-        mode = "GPIO Controller"
-        mode_active = True
-    else:
-        mode = "Unknown"
-        mode_active = False
+    for item in enabled_module_services():
+        if service_status(item["service"]) == "active":
+            active_modules.append(item["module_name"])
 
     return {
         "web": web,
         "logging": cfg.get("logging_enabled", True),
         "ip": get_ip(),
-        "mode": mode,
-        "mode_active": mode_active,
+        "mode": ", ".join(active_modules) if active_modules else "No active module",
+        "mode_active": bool(active_modules),
     }
 
 

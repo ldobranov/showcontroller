@@ -4,15 +4,19 @@ from flask import redirect, request
 from werkzeug.utils import secure_filename
 from services.modules import module_required
 from logger import log
-from modules.video_player.cec import tv_power_on, tv_active_source
 
 import json
 import os
+import re
+import socket
 import subprocess
+
 
 VIDEO_CONFIG = "/opt/showcontroller/config/video.json"
 VIDEO_MEDIA_DIR = "/home/raspberry/videos"
 ALLOWED_VIDEO_EXT = {".mp4", ".jpg", ".jpeg"}
+VLC_HOST = "127.0.0.1"
+VLC_PORT = 4212
 
 
 def video_default_config():
@@ -21,10 +25,14 @@ def video_default_config():
         "name": "Video 1",
         "gpio": 17,
         "video": "/home/raspberry/videos/video1.mp4",
-        "idle": "/home/raspberry/videos/idle.jpg",
-        "cec_enabled": True,
+        "idle": "/home/raspberry/videos/idle.mp4",
         "active_low": False,
-        "audio_device": "hdmi:CARD=vc4hdmi,DEV=0"
+        "audio_device": "hdmi:CARD=vc4hdmi,DEV=0",
+        "active_lock_seconds": 10,
+        "cec_enabled": False,
+        "cec_boot_enabled": True,
+        "cec_boot_delay": 60,
+        "cec_boot_select_source": False,
     }
 
 
@@ -57,8 +65,128 @@ def video_media_files():
     return files
 
 
+def safe_int(value, default, min_value=None, max_value=None):
+    try:
+        result = int(value)
+    except Exception:
+        result = default
+
+    if min_value is not None:
+        result = max(min_value, result)
+    if max_value is not None:
+        result = min(max_value, result)
+
+    return result
+
+
 def restart_video_service():
     subprocess.Popen(["sudo", "systemctl", "restart", "showcontroller-video-node.service"])
+
+
+def vlc_read(command, timeout=0.8):
+    try:
+        with socket.create_connection((VLC_HOST, VLC_PORT), timeout=1) as sock:
+            sock.settimeout(timeout)
+            sock.sendall((command + "\n").encode("utf-8"))
+
+            chunks = []
+            while True:
+                try:
+                    chunk = sock.recv(4096)
+                except socket.timeout:
+                    break
+
+                if not chunk:
+                    break
+
+                chunks.append(chunk.decode("utf-8", errors="replace"))
+
+            return "".join(chunks)
+    except Exception as exc:
+        log(f"VIDEOS VLC RC error: {exc}")
+        return None
+
+
+def vlc_command(command):
+    return vlc_read(command, timeout=0.2) is not None
+
+
+def clean_playlist_title(title):
+    title = title.strip()
+    title = title.split(" (", 1)[0]
+    title = title.split(" [", 1)[0]
+    return title.strip()
+
+
+def parse_playlist_items(raw):
+    items = []
+
+    if not raw:
+        return items
+
+    for line in raw.splitlines():
+        match = re.search(r"\|\s*\*?\s*(\d+)\s+-\s+(.+)$", line)
+        if not match:
+            continue
+
+        item_id = int(match.group(1))
+        title = clean_playlist_title(match.group(2))
+
+        if title in {"Playlist", "Media Library"}:
+            continue
+
+        items.append((item_id, title))
+
+    return items
+
+
+def find_playlist_item(items, path, used_ids):
+    if not path:
+        return None
+
+    target = Path(path).name
+
+    for item_id, title in items:
+        if item_id in used_ids:
+            continue
+        if title == target:
+            return item_id
+
+    return None
+
+
+def goto_config_media(kind):
+    cfg = video_load_config()
+    raw = vlc_read("playlist")
+    items = parse_playlist_items(raw)
+    used_ids = set()
+
+    idle_id = find_playlist_item(items, cfg.get("idle"), used_ids)
+    if idle_id is not None:
+        used_ids.add(idle_id)
+
+    video_id = find_playlist_item(items, cfg.get("video"), used_ids)
+
+    if idle_id is None and items:
+        idle_id = items[0][0]
+
+    if video_id is None:
+        if len(items) >= 2:
+            video_id = items[1][0]
+        else:
+            video_id = idle_id
+
+    item_id = video_id if kind == "video" else idle_id
+
+    if item_id is None:
+        log(f"VIDEOS cannot switch to {kind}: no VLC playlist item")
+        return False
+
+    ok = vlc_command(f"goto {item_id}")
+    if ok:
+        vlc_command("play")
+        log(f"VIDEOS switched to {kind} item {item_id}")
+    return ok
 
 
 def register_video_routes(app, render_page):
@@ -102,16 +230,29 @@ def register_video_routes(app, render_page):
 
         cfg["id"] = request.form.get("id", cfg.get("id", "video1")).strip()
         cfg["name"] = request.form.get("name", cfg.get("name", "Video 1")).strip()
-        cfg["gpio"] = int(request.form.get("gpio", "17") or 17)
+        cfg["gpio"] = safe_int(request.form.get("gpio", cfg.get("gpio", 17)), 17, 0, 40)
         cfg["video"] = request.form.get("video", "").strip()
         cfg["idle"] = request.form.get("idle", "").strip()
         cfg["active_low"] = request.form.get("active_low") == "on"
-        cfg["cec_enabled"] = request.form.get("cec_enabled") == "on"
         cfg["audio_device"] = request.form.get(
-          "audio_device",
-          cfg.get("audio_device", "hdmi:CARD=vc4hdmi,DEV=0")
+            "audio_device",
+            cfg.get("audio_device", "hdmi:CARD=vc4hdmi,DEV=0"),
         ).strip()
-
+        cfg["active_lock_seconds"] = safe_int(
+            request.form.get("active_lock_seconds", cfg.get("active_lock_seconds", 10)),
+            10,
+            0,
+            300,
+        )
+        cfg["cec_enabled"] = False
+        cfg["cec_boot_enabled"] = request.form.get("cec_boot_enabled") == "on"
+        cfg["cec_boot_delay"] = safe_int(
+            request.form.get("cec_boot_delay", cfg.get("cec_boot_delay", 60)),
+            60,
+            0,
+            300,
+        )
+        cfg["cec_boot_select_source"] = request.form.get("cec_boot_select_source") == "on"
 
         video_save_config(cfg)
         log("VIDEOS config saved")
@@ -148,26 +289,26 @@ def register_video_routes(app, render_page):
     @module_required(MODULE["key"])
     def videos_play():
         log("VIDEOS play main requested")
-        restart_video_service()
+        if not goto_config_media("video"):
+            restart_video_service()
         return redirect("/videos")
 
     @app.route("/videos/idle", methods=["POST"])
     @module_required(MODULE["key"])
     def videos_idle():
         log("VIDEOS show idle requested")
-        restart_video_service()
+        if not goto_config_media("idle"):
+            restart_video_service()
         return redirect("/videos")
 
     @app.route("/videos/tv-on", methods=["POST"])
     @module_required(MODULE["key"])
     def videos_tv_on():
-        log("VIDEOS TV ON requested")
-        tv_power_on(log)
+        log("VIDEOS TV ON requested but HDMI CEC is disabled in this build")
         return redirect("/videos")
 
     @app.route("/videos/tv-hdmi", methods=["POST"])
     @module_required(MODULE["key"])
     def videos_tv_hdmi():
-        log("VIDEOS TV HDMI requested")
-        tv_active_source(log)
+        log("VIDEOS TV HDMI requested but HDMI CEC is disabled in this build")
         return redirect("/videos")

@@ -1,0 +1,14 @@
+[Unit]
+Description=ShowController TV Boot HDMI CEC
+After=network-online.target showcontroller-video-node.service
+Wants=network-online.target
+ConditionPathExists=/opt/showcontroller/modules/video_player/tv_boot_cec.sh
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/showcontroller
+ExecStart=/bin/bash /opt/showcontroller/modules/video_player/tv_boot_cec.sh
+TimeoutStartSec=180
+
+[Install]
+WantedBy=multi-user.target

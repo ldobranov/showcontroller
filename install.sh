@@ -41,6 +41,10 @@ rsync -av --delete \
     --exclude "auth.json" \
     --exclude "events.log" \
     --exclude "state.json" \
+    --exclude "gpio.reload" \
+    --exclude "modules.json" \
+    --exclude "config/video.json" \
+    --exclude "config/video_deps_installed" \
     ./ /opt/showcontroller/
 
 echo
@@ -60,8 +64,12 @@ if [ ! -f /opt/showcontroller/config/video.json ]; then
   "active_low": false,
   "video": "",
   "idle": "",
+  "audio_device": "hdmi:CARD=vc4hdmi,DEV=0",
+  "active_lock_seconds": 10,
   "cec_enabled": false,
-  "audio_device": "hdmi:CARD=vc4hdmi,DEV=0"
+  "cec_boot_enabled": true,
+  "cec_boot_delay": 60,
+  "cec_boot_select_source": false
 }
 EOF
     fi
@@ -77,6 +85,7 @@ find /opt/showcontroller -type f -exec chmod 644 {} \;
 
 chmod +x /opt/showcontroller/install.sh
 chmod +x /opt/showcontroller/update.sh 2>/dev/null || true
+chmod +x /opt/showcontroller/modules/video_player/tv_boot_cec.sh 2>/dev/null || true
 
 chmod 644 /opt/showcontroller/config/video.json
 
@@ -86,6 +95,7 @@ echo "Installing systemd services..."
 cp /opt/showcontroller/systemd/showcontroller-web.service /etc/systemd/system/
 cp /opt/showcontroller/systemd/showcontroller-gpio.service /etc/systemd/system/
 cp /opt/showcontroller/systemd/showcontroller-video-node.service /etc/systemd/system/ 2>/dev/null || true
+cp /opt/showcontroller/systemd/showcontroller-tv-boot-cec.service /etc/systemd/system/ 2>/dev/null || true
 
 systemctl daemon-reload
 

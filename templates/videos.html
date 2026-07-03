@@ -56,17 +56,38 @@
       </div>
 
       <div>
+        <label>Active lock seconds</label>
+        <input type="number" name="active_lock_seconds" value="{{ video_cfg.active_lock_seconds }}" min="0" max="300">
+        <p class="muted">Minimum time before returning from main video to idle.</p>
+      </div>
+    </div>
+
+    <div class="grid-2">
+      <div>
         <label>Options</label>
 
         <label>
           <input type="checkbox" name="active_low" {% if video_cfg.active_low %}checked{% endif %}>
           Active low sensor
         </label>
+      </div>
+
+      <div>
+        <label>Boot HDMI CEC</label>
 
         <label>
-          <input type="checkbox" name="cec_enabled" {% if video_cfg.cec_enabled %}checked{% endif %}>
-          HDMI CEC enabled
+          <input type="checkbox" name="cec_boot_enabled" {% if video_cfg.cec_boot_enabled %}checked{% endif %}>
+          TV on once after Raspberry boot
         </label>
+
+        <label>
+          <input type="checkbox" name="cec_boot_select_source" {% if video_cfg.cec_boot_select_source %}checked{% endif %}>
+          Select HDMI at boot
+        </label>
+
+        <label>Boot CEC delay seconds</label>
+        <input type="number" name="cec_boot_delay" value="{{ video_cfg.cec_boot_delay }}" min="0" max="300">
+        <p class="muted">Works only after installing Video Player dependencies from System. TCL Android TV should usually keep Select HDMI off.</p>
       </div>
     </div>
 
@@ -91,17 +112,6 @@
   </div>
 </div>
 
-<div class="card">
-  <h2>TV controls</h2>
-  <div class="actions">
-    <form method="post" action="/videos/tv-on" class="inline-form">
-      <button type="submit">TV on</button>
-    </form>
-    <form method="post" action="/videos/tv-hdmi" class="inline-form">
-      <button type="submit">Select HDMI</button>
-    </form>
-  </div>
-</div>
 
 <div class="card">
   <h2>Upload media</h2>

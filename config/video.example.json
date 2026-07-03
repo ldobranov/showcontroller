@@ -1,10 +1,14 @@
 {
-  "id": "oko1",
-  "name": "Око 1",
+  "id": "video1",
+  "name": "Video 1",
   "gpio": 17,
-  "video": "/home/raspberry/videos/sample-10s.mp4",
-  "idle": "/home/raspberry/videos/idle.jpg",
-  "cec_enabled": true,
-  "active_low": true,
-  "audio_device": "hdmi:CARD=vc4hdmi,DEV=0"
+  "active_low": false,
+  "video": "",
+  "idle": "",
+  "audio_device": "hdmi:CARD=vc4hdmi,DEV=0",
+  "active_lock_seconds": 10,
+  "cec_enabled": false,
+  "cec_boot_enabled": true,
+  "cec_boot_delay": 60,
+  "cec_boot_select_source": false
 }
