@@ -14,6 +14,7 @@ from services.modules import (
 from services.service_manager import (
     disable_service,
     enable_service,
+    kill_process,
     get_ip,
     reboot_system as system_reboot,
     restart_service as system_restart_service,
@@ -72,15 +73,25 @@ def register_system_routes(app, render_page):
     @app.route("/system/mode/video", methods=["POST"])
     def system_mode_video():
         log("SYSTEM mode -> VIDEO")
+
         disable_service("showcontroller-gpio.service")
         enable_service("showcontroller-video-node.service")
+
         return redirect("/system")
 
     @app.route("/system/mode/gpio", methods=["POST"])
     def system_mode_gpio():
         log("SYSTEM mode -> GPIO")
+
         disable_service("showcontroller-video-node.service")
+
+        # Hard cleanup: VLC can survive if video-node is killed during stop/restart.
+        kill_process("vlc.*--rc-host 127.0.0.1:4212")
+        kill_process("/opt/showcontroller/modules/video_player/node.py")
+        kill_process("cec-client")
+
         enable_service("showcontroller-gpio.service")
+
         return redirect("/system")
 
     @app.route("/backup/config")

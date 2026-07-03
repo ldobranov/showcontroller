@@ -10,5 +10,10 @@ RestartSec=3
 User=raspberry
 Environment=PYTHONUNBUFFERED=1
 
+KillMode=control-group
+KillSignal=SIGTERM
+TimeoutStopSec=5
+SendSIGKILL=yes
+
 [Install]
 WantedBy=multi-user.target

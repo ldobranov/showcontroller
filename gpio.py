@@ -78,7 +78,7 @@ def make_event_handler(input_cfg, event):
         trigger = input_cfg.get("trigger", "release")
 
         if event == "press":
-            set_input_pressed(name, True)
+            set_input_event(name, True, "press")
             log(f"GPIO PRESS {name} GPIO{gpio}")
 
             if fire_mode == "real_release":
@@ -87,7 +87,7 @@ def make_event_handler(input_cfg, event):
                 engine.fire_input(input_cfg)
 
         else:
-            set_input_pressed(name, False)
+            set_input_event(name, False, "release")
             log(f"GPIO RELEASE {name} GPIO{gpio}")
 
             if fire_mode == "real_release":
