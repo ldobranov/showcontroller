@@ -46,7 +46,17 @@ def stop_service(service):
 
 
 def restart_service(service):
-    subprocess.Popen(["sudo", "systemctl", "restart", service])
+    subprocess.run(
+        ["sudo", "systemctl", "restart", service],
+        capture_output=True,
+        text=True,
+        timeout=30,
+    )
+
+    for _ in range(40):
+        if service_status(service) == "active":
+            return
+        time.sleep(0.25)
 
 
 def reboot_system():

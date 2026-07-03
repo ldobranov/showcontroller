@@ -27,6 +27,7 @@ def video_default_config():
         "video": "/home/raspberry/videos/video1.mp4",
         "idle": "/home/raspberry/videos/idle.mp4",
         "active_low": False,
+        "pullup": True,
         "audio_device": "hdmi:CARD=vc4hdmi,DEV=0",
         "active_lock_seconds": 10,
         "cec_enabled": False,
@@ -234,6 +235,7 @@ def register_video_routes(app, render_page):
         cfg["video"] = request.form.get("video", "").strip()
         cfg["idle"] = request.form.get("idle", "").strip()
         cfg["active_low"] = request.form.get("active_low") == "on"
+        cfg["pullup"] = request.form.get("pullup") == "on"
         cfg["audio_device"] = request.form.get(
             "audio_device",
             cfg.get("audio_device", "hdmi:CARD=vc4hdmi,DEV=0"),
@@ -244,7 +246,7 @@ def register_video_routes(app, render_page):
             0,
             300,
         )
-        cfg["cec_enabled"] = False
+        cfg["cec_enabled"] = request.form.get("cec_enabled") == "on"
         cfg["cec_boot_enabled"] = request.form.get("cec_boot_enabled") == "on"
         cfg["cec_boot_delay"] = safe_int(
             request.form.get("cec_boot_delay", cfg.get("cec_boot_delay", 60)),
@@ -272,14 +274,17 @@ def register_video_routes(app, render_page):
     def videos_delete():
         path = request.form.get("path", "").strip()
 
-        if not path.startswith(VIDEO_MEDIA_DIR + "/"):
+        real_path = os.path.realpath(path)
+        real_media_dir = os.path.realpath(VIDEO_MEDIA_DIR)
+
+        if not real_path.startswith(real_media_dir + os.sep) and real_path != real_media_dir:
             log(f"VIDEOS delete rejected: {path}")
             return redirect("/videos")
 
         try:
-            if os.path.exists(path):
-                os.remove(path)
-                log(f"VIDEOS deleted: {path}")
+            if os.path.isfile(real_path):
+                os.remove(real_path)
+                log(f"VIDEOS deleted: {real_path}")
         except Exception as exc:
             log(f"VIDEOS delete error: {exc}")
 

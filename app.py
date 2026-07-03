@@ -14,6 +14,26 @@ app = Flask(__name__)
 app.secret_key = auth.get_secret_key()
 
 
+# Endpoints that must remain reachable without authentication.
+PUBLIC_ENDPOINTS = {"login", "static", "favicon"}
+
+
+@app.before_request
+def require_authentication():
+    if not auth.auth_enabled():
+        return None
+
+    endpoint = request.endpoint
+
+    if endpoint is None or endpoint in PUBLIC_ENDPOINTS:
+        return None
+
+    if auth.is_logged_in():
+        return None
+
+    return redirect(url_for("login", next=request.path))
+
+
 def render_page(template_name, **context):
     cfg = load_config()
     return render_template(

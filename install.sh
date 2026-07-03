@@ -8,9 +8,17 @@ echo "======================================="
 
 if [ "$EUID" -ne 0 ]; then
     echo "Please run as root:"
-    echo "sudo ./install.sh"
+    echo "sudo bash install.sh"
     exit 1
 fi
+
+# When the project is downloaded as a ZIP archive the executable bit on the
+# shell scripts is lost. Restore it here so both this run and future runs of
+# ./install.sh / ./update.sh work as expected.
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+chmod +x "$SCRIPT_DIR/install.sh" 2>/dev/null || true
+chmod +x "$SCRIPT_DIR/update.sh" 2>/dev/null || true
+chmod +x "$SCRIPT_DIR/modules/video_player/tv_boot_cec.sh" 2>/dev/null || true
 
 echo
 echo "Installing system packages..."
@@ -76,9 +84,19 @@ EOF
 fi
 
 echo
+echo "Preparing runtime files..."
+
+# Both showcontroller-web and showcontroller-gpio run as root, so runtime
+# state/config/lock files must be owned and writable by root to avoid the
+# GPIO service crashing on permission-denied.
+touch /opt/showcontroller/events.log
+[ -f /opt/showcontroller/state.json ] || echo '{"inputs":{}}' > /opt/showcontroller/state.json
+
+echo
 echo "Setting permissions..."
 
-chown -R raspberry:raspberry /opt/showcontroller
+# Application directory is owned by root (services run as root).
+chown -R root:root /opt/showcontroller
 
 find /opt/showcontroller -type d -exec chmod 755 {} \;
 find /opt/showcontroller -type f -exec chmod 644 {} \;

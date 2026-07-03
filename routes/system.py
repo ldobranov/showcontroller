@@ -106,9 +106,12 @@ def register_system_routes(app, render_page):
     def restore_config():
         file = request.files.get("config_file")
         if file:
-            restore_config_file(file)
-            log("CONFIG restored from web")
-            engine.request_gpio_reload("config restored")
+            try:
+                restore_config_file(file)
+                log("CONFIG restored from web")
+                engine.request_gpio_reload("config restored")
+            except ValueError as exc:
+                log(f"CONFIG restore failed: {exc}")
         return redirect("/system")
 
     @app.route("/services/restart/<name>", methods=["POST"])

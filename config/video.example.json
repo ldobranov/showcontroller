@@ -3,6 +3,7 @@
   "name": "Video 1",
   "gpio": 17,
   "active_low": false,
+  "pullup": true,
   "video": "",
   "idle": "",
   "audio_device": "hdmi:CARD=vc4hdmi,DEV=0",

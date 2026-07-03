@@ -70,6 +70,16 @@
           <input type="checkbox" name="active_low" {% if video_cfg.active_low %}checked{% endif %}>
           Active low sensor
         </label>
+
+        <label>
+          <input type="checkbox" name="pullup" {% if video_cfg.get('pullup', True) %}checked{% endif %}>
+          Use internal pull-up resistor
+        </label>
+
+        <label>
+          <input type="checkbox" name="cec_enabled" {% if video_cfg.cec_enabled %}checked{% endif %}>
+          Enable HDMI CEC control
+        </label>
       </div>
 
       <div>

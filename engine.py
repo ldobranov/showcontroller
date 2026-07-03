@@ -1,8 +1,10 @@
 import os
 import time
+import threading
 
 from config import load_config, save_config
 from logger import log
+from paths import GPIO_RELOAD_FILE
 from state import (
     get_input_index,
     get_input_runtime,
@@ -13,12 +15,12 @@ from udp import send_udp
 
 
 DEFAULT_PRESS_RELEASE_DELAY = 0.2
-GPIO_RELOAD_FILE = "/opt/showcontroller/gpio.reload"
 
 
 def request_gpio_reload(reason="manual"):
     """Signal the separate GPIO service to reload config without restarting."""
     try:
+        os.makedirs(os.path.dirname(GPIO_RELOAD_FILE), exist_ok=True)
         with open(GPIO_RELOAD_FILE, "w", encoding="utf-8") as f:
             f.write(f"{time.time()} {reason}\n")
         log(f"GPIO reload requested: {reason}")
@@ -58,26 +60,17 @@ def get_input_by_name(input_name):
     return None
 
 
-def get_current_message(input_cfg=None):
-    if input_cfg is None:
-        input_cfg = get_first_input()
-
-    if not input_cfg:
-        return "-"
-
-    if input_cfg.get("mode") == "sequence":
-        seq = input_cfg.get("sequence", [])
-        if not seq:
-            return "-"
-        idx = get_input_index(input_cfg["name"])
-        return seq[idx % len(seq)]
-
-    return input_cfg.get("message", "-")
-
-
-
-
 def get_fire_delay(input_cfg):
+    """Delay between press and release, in seconds.
+
+    If a positive hold_ms is configured it takes precedence, since it
+    represents an explicit hold duration for the input. Otherwise the
+    fire_delay_ms value (or the default) is used.
+    """
+    hold_ms = int(input_cfg.get("hold_ms", 0) or 0)
+    if hold_ms > 0:
+        return hold_ms / 1000
+
     delay_ms = int(input_cfg.get("fire_delay_ms", int(DEFAULT_PRESS_RELEASE_DELAY * 1000)))
     return delay_ms / 1000
 
@@ -90,8 +83,12 @@ def send_press_release(msg, delay=DEFAULT_PRESS_RELEASE_DELAY):
     base = msg.split(",", 1)[0].strip()
 
     send_udp(msg)
-    time.sleep(delay)
-    send_udp(base + ",0")
+
+    def _delayed_release():
+        time.sleep(delay)
+        send_udp(base + ",0")
+
+    threading.Thread(target=_delayed_release, daemon=True).start()
 
 def get_current_input_message(input_cfg):
     if not input_cfg:

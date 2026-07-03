@@ -12,12 +12,12 @@
   {% for inp in inputs %}
     <div
       class="live-input row"
-      data-input-id="{{ inp.id }}"
-      data-active="{{ 1 if inp.active else 0 }}"
+      data-input-name="{{ inp.name }}"
+      data-active="{{ 1 if inp.pressed else 0 }}"
     >
       <strong>{{ inp.name }}</strong>
-      <span class="badge {% if inp.active %}ok{% else %}muted{% endif %}">
-        {% if inp.active %}ON{% else %}OFF{% endif %}
+      <span class="badge {% if inp.pressed %}ok{% else %}muted{% endif %}">
+        {% if inp.pressed %}ON{% else %}OFF{% endif %}
       </span>
     </div>
   {% endfor %}

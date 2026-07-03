@@ -17,6 +17,7 @@ DEFAULT_CONFIG = {
     "name": "Video 1",
     "gpio": 17,
     "active_low": False,
+    "pullup": True,
     "video": "/home/raspberry/videos/example.mp4",
     "idle": "/home/raspberry/videos/idle.mp4",
     "audio_device": "hdmi:CARD=vc4hdmi,DEV=0",
@@ -56,6 +57,8 @@ NODE_ID = config["id"]
 NODE_NAME = config["name"]
 GPIO_PIN = int(config["gpio"])
 ACTIVE_LOW = bool(config.get("active_low", False))
+# Accept both "pullup" (app-wide convention) and legacy "pull_up".
+PULL_UP = bool(config.get("pullup", config.get("pull_up", True)))
 VIDEO_PATH = config["video"]
 IDLE_PATH = config.get("idle")
 AUDIO_DEVICE = config.get("audio_device", "hdmi:CARD=vc4hdmi,DEV=0")
@@ -279,6 +282,7 @@ def set_active():
 log(f"Starting {NODE_NAME}")
 log(f"GPIO: {GPIO_PIN}")
 log(f"Active low: {ACTIVE_LOW}")
+log(f"Pull up: {PULL_UP}")
 log(f"Audio device: {AUDIO_DEVICE}")
 log(f"Video: {VIDEO_PATH}")
 log(f"Idle: {IDLE_PATH}")
@@ -286,7 +290,7 @@ log(f"Active lock: {ACTIVE_LOCK_SECONDS}s")
 
 start_vlc()
 
-sensor = DigitalInputDevice(GPIO_PIN, pull_up=False)
+sensor = DigitalInputDevice(GPIO_PIN, pull_up=PULL_UP)
 
 set_idle()
 

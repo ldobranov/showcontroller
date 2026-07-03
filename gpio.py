@@ -4,13 +4,12 @@ import time
 from gpiozero import Button
 
 import engine
-from config import load_config
+from config import load_config, CONFIG_FILE
 from logger import log
+from paths import GPIO_RELOAD_FILE
 from state import set_input_event, set_input_pressed
 
 buttons = []
-CONFIG_FILE = "/opt/showcontroller/config.json"
-GPIO_RELOAD_FILE = "/opt/showcontroller/gpio.reload"
 
 
 def file_mtime(path):

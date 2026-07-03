@@ -64,7 +64,13 @@ def register_gpio_routes(app, render_page):
     @app.route("/send", methods=["POST"])
     @module_required(MODULE["key"])
     def send_msg():
+        # Manual test-send of a raw message. This is a diagnostic tool and
+        # deliberately does not go through input enable/sequence handling.
         msg = request.form.get("message", "").strip()
+        if not msg:
+            return redirect(request.referrer or "/")
+
+        log(f"MANUAL SEND -> {msg}")
         engine.send_press_release(msg)
         return redirect(request.referrer or "/")
 

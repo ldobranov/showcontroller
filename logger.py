@@ -9,7 +9,7 @@ def log(message):
         cfg = load_config()
         if cfg.get("logging_enabled", True) is False:
             return
-    except:
+    except Exception:
         pass
 
     ts = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")

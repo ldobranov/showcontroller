@@ -69,8 +69,12 @@ git clone https://github.com/ldobranov/showcontroller.git
 
 cd showcontroller
 
-sudo ./install.sh
+sudo bash install.sh
 ```
+
+> If you downloaded the project as a ZIP archive, the scripts may not be
+> executable. Always start the installer with `sudo bash install.sh`
+> (the installer restores the executable bit on the scripts automatically).
 
 ---
 
@@ -88,7 +92,7 @@ or manually:
 git fetch origin
 git reset --hard origin/main
 
-sudo ./update.sh
+sudo bash update.sh
 ```
 
 ---

@@ -7,6 +7,8 @@ from functools import wraps
 from flask import abort
 from pathlib import Path
 
+from logger import log
+
 
 MODULES_FILE = "/opt/showcontroller/modules.json"
 
@@ -218,17 +220,21 @@ def apply_modules():
 
         for service in item["services"]:
             if is_enabled:
-                subprocess.run(
+                result = subprocess.run(
                     ["systemctl", "enable", "--now", service],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
+                    capture_output=True,
+                    text=True,
                 )
+                if result.returncode != 0:
+                    log(f"MODULE enable {service} failed: {result.stderr.strip()}")
             else:
-                subprocess.run(
+                result = subprocess.run(
                     ["systemctl", "disable", "--now", service],
-                    stdout=subprocess.DEVNULL,
-                    stderr=subprocess.DEVNULL,
+                    capture_output=True,
+                    text=True,
                 )
+                if result.returncode != 0:
+                    log(f"MODULE disable {service} failed: {result.stderr.strip()}")
 
 
 def register_enabled_modules(app, render_page):
