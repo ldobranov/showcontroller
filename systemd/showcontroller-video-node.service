@@ -7,7 +7,6 @@ ExecStart=/usr/bin/python3 /opt/showcontroller/modules/video_player/node.py
 WorkingDirectory=/opt/showcontroller
 Restart=always
 RestartSec=3
-User=raspberry
 Environment=PYTHONUNBUFFERED=1
 
 KillMode=control-group

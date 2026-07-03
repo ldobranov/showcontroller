@@ -288,20 +288,13 @@ log(f"Video: {VIDEO_PATH}")
 log(f"Idle: {IDLE_PATH}")
 log(f"Active lock: {ACTIVE_LOCK_SECONDS}s")
 
-start_vlc()
-
 sensor = DigitalInputDevice(GPIO_PIN, pull_up=PULL_UP)
 
+start_vlc()
 set_idle()
 
 try:
     while True:
-        if vlc_process and vlc_process.poll() is not None:
-            log("VLC crashed/exited, restarting")
-            start_vlc()
-            current_mode = None
-            set_idle()
-
         sensor_active = (sensor.value == 0) if ACTIVE_LOW else (sensor.value == 1)
 
         if sensor_active:
@@ -315,6 +308,6 @@ try:
                 set_idle()
 
         time.sleep(0.05)
-
 finally:
-    stop_vlc()
+    if vlc_process:
+        vlc_process.terminate()

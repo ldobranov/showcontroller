@@ -12,7 +12,6 @@
   {% for inp in inputs %}
     <div
       class="live-input row"
-      data-input-name="{{ inp.name }}"
       data-active="{{ 1 if inp.pressed else 0 }}"
     >
       <strong>{{ inp.name }}</strong>
