@@ -10,11 +10,16 @@ MODULE = {
             "page": "triggers",
         }
     ],
-    "services": [
-        "showcontroller-gpio.service"
-    ],
+    "services": [],
+    "runtime": {
+        "role": "node",
+        "mode": "gpio",
+        "label": "GPIO",
+        "service": "showcontroller-gpio.service",
+        "cleanup": [],
+    },
     "description": "GPIO inputs, triggers and UDP output.",
-    "version": "1.3.0",
+    "version": "1.3.7",
     "apt_packages": [
         "python3-rpi.gpio"
     ],

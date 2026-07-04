@@ -1,5 +1,12 @@
 # Changelog
 
+## v1.3.7
+
+- Added paired_sequence mode for legacy Arduino-style UDP installations.
+- Fixed version alignment between VERSION, README and module manifests.
+- Includes video-node service fixes and GPIO diagnostics live update fixes.
+
+
 ## v1.1.0
 
 ### Added

@@ -71,15 +71,20 @@
   </div>
 
   <div class="panel">
-    <h3>Node mode</h3>
 
-    <form method="post" action="/system/mode/video">
-      <button type="submit">Switch to Video</button>
-    </form>
+    <h3>Node Mode</h3>
 
-    <form method="post" action="/system/mode/gpio">
-      <button type="submit">Switch to GPIO</button>
-    </form>
+    {% if node_modes %}
+      {% for mode in node_modes %}
+        <form method="post" action="/system/mode/{{ mode.mode }}" style="display:inline">
+          <button type="submit" {% if current_node_mode == mode.mode %}class="primary"{% endif %}>
+            {{ mode.label or mode.mode }}
+          </button>
+        </form>
+      {% endfor %}
+    {% else %}
+      <p class="muted">No node modes available. Enable a module with node runtime.</p>
+    {% endif %}
 
     <hr>
 

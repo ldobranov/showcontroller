@@ -32,6 +32,7 @@ rsync -av --delete \
     --exclude "modules.json" \
     --exclude "config/video.json" \
     --exclude "config/video_deps_installed" \
+    --exclude "config/node_mode.json" \
     ./ /opt/showcontroller/
 
 # update.sh may run as root inside a repo owned by another user (e.g. the
@@ -57,7 +58,7 @@ chmod 644 /opt/showcontroller/version.json
 echo
 echo "Setting permissions..."
 
-# Services run as root; keep the application directory root-owned.
+# Keep application code root-owned. Runtime services use their own working directories.
 chown -R root:root /opt/showcontroller
 
 find /opt/showcontroller -type d -exec chmod 755 {} \;
@@ -82,11 +83,24 @@ echo "Restarting services..."
 
 systemctl restart showcontroller-web
 
-for svc in showcontroller-gpio showcontroller-video-node; do
-    if systemctl is-enabled --quiet "$svc"; then
-        systemctl restart "$svc"
-    fi
-done
+ACTIVE_NODE_SERVICE="$(cd /opt/showcontroller && python3 - <<'PY'
+from services.node_mode import get_current_node_mode
+from services.modules import get_node_runtime
+
+mode = get_current_node_mode()
+runtime = get_node_runtime(mode, enabled_only=True)
+
+if runtime and runtime.get("service"):
+    print(runtime["service"])
+PY
+)"
+
+if [ -n "$ACTIVE_NODE_SERVICE" ]; then
+    echo "Restarting active node service: $ACTIVE_NODE_SERVICE"
+    systemctl restart "$ACTIVE_NODE_SERVICE" || true
+else
+    echo "No active node service to restart"
+fi
 
 echo
 echo "======================================="

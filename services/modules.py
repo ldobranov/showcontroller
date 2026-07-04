@@ -121,6 +121,7 @@ def get_available_modules():
             "enabled_by_default": manifest.get("enabled_by_default", True),
             "menu": manifest.get("menu", []),
             "services": manifest.get("services", []),
+            "runtime": manifest.get("runtime"),
             "register": register,
             "description": manifest.get("description", ""),
             "version": manifest.get("version", ""),
@@ -193,6 +194,42 @@ def enabled_module_services():
     return services
 
 
+def module_runtimes(role=None, enabled_only=True):
+    enabled = load_modules()
+    result = []
+
+    for item in get_available_modules():
+        if enabled_only and not enabled.get(item["key"], False):
+            continue
+
+        runtime = item.get("runtime")
+        if not runtime:
+            continue
+
+        if role and runtime.get("role") != role:
+            continue
+
+        result.append({
+            **runtime,
+            "module_key": item["key"],
+            "module_name": item["name"],
+        })
+
+    return result
+
+
+def node_runtimes(enabled_only=True):
+    return module_runtimes(role="node", enabled_only=enabled_only)
+
+
+def get_node_runtime(mode, enabled_only=True):
+    for runtime in node_runtimes(enabled_only=enabled_only):
+        if runtime.get("mode") == mode:
+            return runtime
+
+    return None
+
+
 def modules_with_dependency_status():
     enabled = load_modules()
     result = []
@@ -216,25 +253,21 @@ def apply_modules():
     enabled = load_modules()
 
     for item in get_available_modules():
-        is_enabled = enabled.get(item["key"], False)
+        module_enabled = enabled.get(item["key"], False)
 
-        for service in item["services"]:
-            if is_enabled:
-                result = subprocess.run(
+        for service in item.get("services", []):
+            if module_enabled:
+                subprocess.run(
                     ["systemctl", "enable", "--now", service],
-                    capture_output=True,
-                    text=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
                 )
-                if result.returncode != 0:
-                    log(f"MODULE enable {service} failed: {result.stderr.strip()}")
             else:
-                result = subprocess.run(
+                subprocess.run(
                     ["systemctl", "disable", "--now", service],
-                    capture_output=True,
-                    text=True,
+                    stdout=subprocess.DEVNULL,
+                    stderr=subprocess.DEVNULL,
                 )
-                if result.returncode != 0:
-                    log(f"MODULE disable {service} failed: {result.stderr.strip()}")
 
 
 def register_enabled_modules(app, render_page):
