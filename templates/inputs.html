@@ -130,6 +130,12 @@
                     <option value="real_release" {% if inp.get('fire_mode', 'timed') == 'real_release' %}selected{% endif %}>
                       Real release
                     </option>
+                    <option value="raw_sequence" {% if inp.get('fire_mode', 'timed') == 'raw_sequence' %}selected{% endif %}>
+                      Raw sequence / exact UDP
+                    </option>
+                    <option value="paired_sequence" {% if inp.get('fire_mode', 'timed') == 'paired_sequence' %}selected{% endif %}>
+                      Paired sequence / exact press + release
+                    </option>
                   </select>
                   <label>Press/release delay ms</label>
                   <input name="fire_delay_ms" value="{{ inp.get('fire_delay_ms', 200) }}">
@@ -210,6 +216,8 @@
                 <select name="fire_mode">
                   <option value="timed" selected>Timed press/release</option>
                   <option value="real_release">Real release</option>
+                  <option value="raw_sequence">Raw sequence / exact UDP</option>
+                  <option value="paired_sequence">Paired sequence / exact press + release</option>
                 </select>
               <label>Press/release delay ms</label>
               <input name="fire_delay_ms" value="200">

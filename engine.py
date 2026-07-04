@@ -90,6 +90,26 @@ def send_press_release(msg, delay=DEFAULT_PRESS_RELEASE_DELAY):
 
     threading.Thread(target=_delayed_release, daemon=True).start()
 
+
+def send_press_release_pair(press_msg, release_msg, delay=DEFAULT_PRESS_RELEASE_DELAY):
+    """Send exact press message, then exact release message after delay."""
+    press_msg = (press_msg or "").strip()
+    release_msg = (release_msg or "").strip()
+
+    if not press_msg:
+        return
+
+    send_udp(press_msg)
+
+    if not release_msg:
+        return
+
+    def _delayed_release():
+        time.sleep(delay)
+        send_udp(release_msg)
+
+    threading.Thread(target=_delayed_release, daemon=True).start()
+
 def get_current_input_message(input_cfg):
     if not input_cfg:
         return ""
@@ -166,6 +186,8 @@ def fire_input(input_cfg):
 
     mode = input_cfg.get("mode", "single")
 
+    fire_mode = input_cfg.get("fire_mode", "timed")
+
     if mode == "sequence":
         seq = input_cfg.get("sequence", [])
         if not seq:
@@ -175,16 +197,31 @@ def fire_input(input_cfg):
         idx = get_input_index(name) % len(seq)
         msg = seq[idx]
 
-        send_press_release(msg, get_fire_delay(input_cfg))
+        if fire_mode == "raw_sequence":
+            send_press_only(msg)
+            next_idx = (idx + 1) % len(seq)
+            log_msg = msg
+        elif fire_mode == "paired_sequence":
+            release_idx = (idx + 1) % len(seq)
+            release_msg = seq[release_idx]
+            send_press_release_pair(msg, release_msg, get_fire_delay(input_cfg))
+            next_idx = (idx + 2) % len(seq)
+            log_msg = f"{msg} / {release_msg}"
+        else:
+            send_press_release(msg, get_fire_delay(input_cfg))
+            next_idx = (idx + 1) % len(seq)
+            log_msg = msg
 
-        next_idx = (idx + 1) % len(seq)
         set_input_index(name, next_idx)
-        log(f"FIRED {name} -> {msg} next_index={next_idx}")
+        log(f"FIRED {name} -> {log_msg} next_index={next_idx}")
 
     elif mode == "single":
         msg = input_cfg.get("message", "").strip()
         if msg:
-            send_press_release(msg, get_fire_delay(input_cfg))
+            if fire_mode == "raw_sequence":
+                send_press_only(msg)
+            else:
+                send_press_release(msg, get_fire_delay(input_cfg))
             log(f"FIRED {input_cfg.get('name', 'unknown')} -> {msg}")
 
 

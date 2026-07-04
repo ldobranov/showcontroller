@@ -10,14 +10,19 @@
   <h3>Inputs</h3>
 
   {% for inp in inputs %}
-    <div
-      class="live-input row"
-      data-active="{{ 1 if inp.pressed else 0 }}"
-    >
+    <div class="input-row" data-live-input-name="{{ inp.name }}">
       <strong>{{ inp.name }}</strong>
-      <span class="badge {% if inp.pressed %}ok{% else %}muted{% endif %}">
-        {% if inp.pressed %}ON{% else %}OFF{% endif %}
+      <span class="pill">GPIO{{ inp.gpio }}</span>
+      <span class="pill">{{ inp.get('mode', '-') }}</span>
+      <span class="pill">trigger={{ inp.get('trigger', 'release') }}</span>
+      <span class="pill">fire={{ inp.get('fire_mode', 'timed') }}</span>
+
+      <span class="live-status {% if inp.pressed %}ok{% else %}muted{% endif %}">
+        {% if inp.pressed %}PRESSED{% else %}RELEASED{% endif %}
       </span>
+
+      <span class="live-event">last: {{ inp.get('last_event', '-') }} {{ inp.get('last_event_time', '') }}</span>
+      <span class="live-count">press: {{ inp.get('press_count', 0) }} / release: {{ inp.get('release_count', 0) }}</span>
     </div>
   {% endfor %}
 </section>
