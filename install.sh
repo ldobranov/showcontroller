@@ -56,6 +56,41 @@ rsync -av --delete \
     ./ /opt/showcontroller/
 
 echo
+echo "Syncing and updating main config.json..."
+python3 -c "
+import json, os
+src_default = 'config.default.json'
+dest_config = '/opt/showcontroller/config.json'
+if not os.path.exists(dest_config):
+    if os.path.exists(src_default):
+        with open(src_default, 'r') as f:
+            data = json.load(f)
+        with open(dest_config, 'w') as f:
+            json.dump(data, f, indent=2)
+        print('Created new config.json from template.')
+else:
+    with open(src_default, 'r') as f:
+        default = json.load(f)
+    with open(dest_config, 'r') as f:
+        current = json.load(f)
+    updated = False
+    for key, value in default.items():
+        if key not in current:
+            current[key] = value
+            updated = True
+        elif isinstance(value, dict) and isinstance(current[key], dict):
+            for sub_key, sub_value in value.items():
+                if sub_key not in current[key]:
+                    current[key][sub_key] = sub_value
+                    updated = True
+    if 'version' in default and current.get('version') != default['version']:
+        current['version'] = default['version']
+        updated = True
+    if updated:
+        with open(dest_config, 'w') as f:
+            json.dump(current, f, indent=2)
+        print('Successfully merged new keys into existing config.json.')
+"
 echo "Preparing runtime video config..."
 
 mkdir -p /opt/showcontroller/config
