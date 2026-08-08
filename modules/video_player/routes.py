@@ -10,9 +10,13 @@ import os
 import re
 import socket
 import subprocess
+import shutil
 
 os.makedirs('/home/raspberry/videos', exist_ok=True)
 VIDEO_CONFIG = "/opt/showcontroller/config/video.json"
+EXAMPLE_PATH = "/opt/showcontroller/config/video.example.json"
+if not os.path.exists(VIDEO_CONFIG) and os.path.exists(EXAMPLE_PATH):
+    shutil.copy(EXAMPLE_PATH, VIDEO_CONFIG)
 VIDEO_MEDIA_DIR = "/home/raspberry/videos"
 ALLOWED_VIDEO_EXT = {".mp4", ".jpg", ".jpeg"}
 VLC_HOST = "127.0.0.1"

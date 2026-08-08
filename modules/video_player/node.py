@@ -6,9 +6,13 @@ import time
 from pathlib import Path
 
 from gpiozero import DigitalInputDevice
-
+import shutil
 
 CONFIG_PATH = "/opt/showcontroller/config/video.json"
+EXAMPLE_PATH = "/opt/showcontroller/config/video.example.json"
+if not os.path.exists(CONFIG_PATH) and os.path.exists(EXAMPLE_PATH):
+    os.makedirs(os.path.dirname(CONFIG_PATH), exist_ok=True)
+    shutil.copy(EXAMPLE_PATH, CONFIG_PATH)
 VLC_HOST = "127.0.0.1"
 VLC_PORT = 4212
 
