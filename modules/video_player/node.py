@@ -420,7 +420,9 @@ def set_active():
 
 
 def sensor_is_active(sensor, active_low):
-    value = sensor.value
+    # gpiozero's device value is interpreted using pull_up. Read the pin
+    # directly so Active Low always describes the electrical GPIO level.
+    value = int(bool(sensor.pin.state))
 
     if active_low:
         return value == 0

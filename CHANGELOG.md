@@ -1,5 +1,18 @@
 # Changelog
 
+## v1.3.9
+
+- Fixed Dashboard reporting for GPIO and Video runtime services.
+- Made reinstall preserve and start only the configured Node Mode.
+- Made restored snapshots require a reboot instead of applying partial runtime changes.
+- Fixed Video Player Active Low handling to use the raw electrical GPIO state.
+- Made the Video service use its guaranteed runtime directory after cold boot.
+- Restored secure `600` permissions for authentication data after install and update.
+- Added process-safe event log rotation with a 100 KB maximum file size.
+- Removed temporary backup ZIP files after download.
+- Made restore remove a stale video dependency marker when it is absent from the snapshot.
+- Added safe numeric validation and bounds for GPIO and TouchDesigner forms.
+
 ## v1.3.8
 
 - Added optional second sensor for Video Player.

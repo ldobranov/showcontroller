@@ -19,7 +19,7 @@ MODULE = {
         "cleanup": [],
     },
     "description": "GPIO inputs, triggers and UDP output.",
-    "version": "1.3.8",
+    "version": "1.3.9",
     "apt_packages": [
         "python3-rpi.gpio"
     ],

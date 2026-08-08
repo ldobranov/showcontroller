@@ -17,6 +17,17 @@
 </section>
 {% endif %}
 
+{% if request.args.get("restore_msg") %}
+<section class="panel">
+  {% if request.args.get("restore_ok") == "1" %}
+    <span class="badge ok">SUCCESS</span>
+  {% else %}
+    <span class="badge err">ERROR</span>
+  {% endif %}
+  <strong>{{ request.args.get("restore_msg") }}</strong>
+</section>
+{% endif %}
+
 <section class="grid">
 
   <!-- CARD 1: MODULES MANAGEMENT -->
@@ -123,7 +134,7 @@
       <h4 style="margin: 0 0 10px 0; font-size: 1rem;">Upload System Backup</h4>
       <form method="post" action="/restore/config" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 10px;">
         <input type="file" name="config_file" accept=".zip" style="padding: 5px; background: rgba(0,0,0,0.01); border: 1px dashed rgba(0,0,0,0.1); border-radius: 4px;">
-        <button type="submit" style="width: 100%;">Restore system backup (.zip)</button>
+        <button type="submit" style="width: 100%;" onclick="return confirm('Restore this backup? A reboot will be required before the restored configuration is fully applied.');">Restore system backup (.zip)</button>
       </form>
     </div>
   </div>

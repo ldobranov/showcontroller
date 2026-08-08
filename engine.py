@@ -17,6 +17,21 @@ from udp import send_udp
 DEFAULT_PRESS_RELEASE_DELAY = 0.2
 
 
+def safe_int(value, default, minimum=None, maximum=None):
+    try:
+        number = int(str(value).strip())
+    except (TypeError, ValueError):
+        number = int(default)
+
+    if minimum is not None:
+        number = max(minimum, number)
+
+    if maximum is not None:
+        number = min(maximum, number)
+
+    return number
+
+
 def request_gpio_reload(reason="manual"):
     """Signal the separate GPIO service to reload config without restarting."""
     try:
@@ -249,12 +264,21 @@ def reset_first_input():
 
 def save_settings_from_form(form):
     cfg = load_config()
+    current_td = cfg.get("touchdesigner", {})
 
     cfg["name"] = form.get("name", "ShowController").strip()
     cfg["logging_enabled"] = form.get("logging_enabled") == "on"
     cfg["touchdesigner"] = {
-        "ip": form.get("td_ip", "192.168.0.127").strip(),
-        "port": int(form.get("td_port", "8891").strip()),
+        "ip": form.get(
+            "td_ip",
+            current_td.get("ip", "192.168.0.127"),
+        ).strip(),
+        "port": safe_int(
+            form.get("td_port"),
+            current_td.get("port", 8891),
+            1,
+            65535,
+        ),
     }
 
     save_config(cfg)
@@ -285,14 +309,51 @@ def save_inputs_from_form(form):
         if not name:
             continue
 
-        gpio = int(gpios[i].strip())
-        mode = modes[i].strip()
-        trigger = triggers[i].strip()
+        gpio = safe_int(
+            gpios[i] if i < len(gpios) else None,
+            17,
+            0,
+            40,
+        )
+        mode = modes[i].strip() if i < len(modes) else "single"
+        trigger = triggers[i].strip() if i < len(triggers) else "release"
 
-        debounce_ms = int((debounce_ms_list[i].strip() if i < len(debounce_ms_list) else "250") or 250)
-        fire_delay_ms = int((fire_delay_ms_list[i].strip() if i < len(fire_delay_ms_list) else "200") or 200)
-        hold_ms = int((hold_ms_list[i].strip() if i < len(hold_ms_list) else "0") or 0)
+        if mode not in {"single", "sequence"}:
+            mode = "single"
+
+        if trigger not in {"press", "release", "both"}:
+            trigger = "release"
+
+        debounce_ms = safe_int(
+            debounce_ms_list[i] if i < len(debounce_ms_list) else None,
+            250,
+            0,
+            60_000,
+        )
+        fire_delay_ms = safe_int(
+            fire_delay_ms_list[i] if i < len(fire_delay_ms_list) else None,
+            200,
+            0,
+            60_000,
+        )
+        hold_ms = safe_int(
+            hold_ms_list[i] if i < len(hold_ms_list) else None,
+            0,
+            0,
+            300_000,
+        )
         fire_mode = (fire_modes[i].strip() if i < len(fire_modes) else "timed") or "timed"
+
+        if fire_mode not in {"timed", "follow"}:
+            fire_mode = "timed"
+
+        message = messages[i].strip() if i < len(messages) else ""
+        raw_sequence = sequences[i] if i < len(sequences) else ""
+        sequence = [
+            line.strip()
+            for line in raw_sequence.splitlines()
+            if line.strip()
+        ]
 
         item = {
             "enabled": str(i) in enabled_list,
@@ -308,19 +369,11 @@ def save_inputs_from_form(form):
         }
 
         if mode == "sequence":
-            item["sequence"] = [
-                line.strip()
-                for line in sequences[i].splitlines()
-                if line.strip()
-            ]
-            item["message"] = messages[i].strip() if i < len(messages) else ""
+            item["sequence"] = sequence
+            item["message"] = message
         else:
-            item["message"] = messages[i].strip() if i < len(messages) else ""
-            item["sequence"] = [
-                line.strip()
-                for line in sequences[i].splitlines()
-                if line.strip()
-            ] if i < len(sequences) else []
+            item["message"] = message
+            item["sequence"] = sequence
 
         inputs.append(item)
 

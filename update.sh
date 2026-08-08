@@ -106,6 +106,9 @@ chown -R root:root /opt/showcontroller
 find /opt/showcontroller -type d -exec chmod 755 {} \;
 find /opt/showcontroller -type f -exec chmod 644 {} \;
 
+# Authentication data contains the password hash and Flask secret key.
+chmod 600 /opt/showcontroller/auth.json 2>/dev/null || true
+
 chmod +x /opt/showcontroller/install.sh 2>/dev/null || true
 chmod +x /opt/showcontroller/update.sh 2>/dev/null || true
 chmod +x /opt/showcontroller/modules/video_player/tv_boot_cec.sh 2>/dev/null || true

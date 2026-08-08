@@ -46,7 +46,12 @@ def register_gpio_routes(app, render_page):
 
         cfg.setdefault("touchdesigner", {})
         cfg["touchdesigner"]["ip"] = request.form.get("td_ip", "").strip()
-        cfg["touchdesigner"]["port"] = int(request.form.get("td_port", 8891) or 8891)
+        cfg["touchdesigner"]["port"] = engine.safe_int(
+            request.form.get("td_port"),
+            cfg["touchdesigner"].get("port", 8891),
+            1,
+            65535,
+        )
 
         save_config(cfg)
         engine.request_gpio_reload("trigger settings updated")

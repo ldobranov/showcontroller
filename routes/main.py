@@ -14,14 +14,6 @@ def register_main_routes(app, render_page):
                 "status": service_status(item["service"]),
             })
 
-        modules = []
-
-        for item in enabled_modules_info():
-            modules.append({
-                "key": item["key"],
-                "name": item["name"],
-                "services": services_by_module.get(item["key"], []),
-            })
         for runtime in node_runtimes(enabled_only=True):
             service = runtime.get("service")
 
@@ -31,6 +23,15 @@ def register_main_routes(app, render_page):
             services_by_module.setdefault(runtime["module_key"], []).append({
                 "name": service,
                 "status": service_status(service),
+            })
+
+        modules = []
+
+        for item in enabled_modules_info():
+            modules.append({
+                "key": item["key"],
+                "name": item["name"],
+                "services": services_by_module.get(item["key"], []),
             })
 
         return modules

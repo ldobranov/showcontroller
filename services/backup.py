@@ -155,11 +155,15 @@ def restore_config_file(uploaded_file):
 
             for relative_path in OPTIONAL_FILES:
                 name = str(relative_path)
+                target = BASE_DIR / relative_path
 
                 if name not in names:
+                    try:
+                        target.unlink()
+                    except FileNotFoundError:
+                        pass
                     continue
 
-                target = BASE_DIR / relative_path
                 target.parent.mkdir(
                     parents=True,
                     exist_ok=True,

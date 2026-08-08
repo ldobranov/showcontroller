@@ -9,10 +9,10 @@ User=raspberry
 Group=raspberry
 
 RuntimeDirectory=showcontroller-video
-RuntimeDirectoryMode=0755
+RuntimeDirectoryMode=0700
 WorkingDirectory=/run/showcontroller-video
 
-Environment=XDG_RUNTIME_DIR=/run/user/1000
+Environment=XDG_RUNTIME_DIR=/run/showcontroller-video
 Environment=TERM=xterm
 
 ExecStart=/usr/bin/python3 /opt/showcontroller/modules/video_player/node.py

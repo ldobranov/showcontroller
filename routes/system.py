@@ -1,6 +1,7 @@
-from flask import redirect, request, send_file
+from flask import after_this_request, redirect, request, send_file
+import os
+from urllib.parse import quote_plus
 
-import engine
 from config import load_config
 from logger import log
 from services.backup import config_backup_path, restore_config_file
@@ -103,8 +104,19 @@ def register_system_routes(app, render_page):
 
     @app.route("/backup/config")
     def backup_config():
+        backup_path = config_backup_path()
+
+        @after_this_request
+        def remove_temporary_backup(response):
+            try:
+                os.unlink(backup_path)
+            except FileNotFoundError:
+                pass
+
+            return response
+
         return send_file(
-            config_backup_path(),
+            backup_path,
             as_attachment=True,
             download_name="showcontroller-backup.zip",
         )
@@ -116,10 +128,22 @@ def register_system_routes(app, render_page):
             try:
                 restore_config_file(file)
                 log("CONFIG restored from web")
-                engine.request_gpio_reload("config restored")
+                return redirect(
+                    "/system?restore_msg="
+                    "Restore+successful+-+reboot+required"
+                    "&restore_ok=1"
+                )
             except ValueError as exc:
                 log(f"CONFIG restore failed: {exc}")
-        return redirect("/system")
+                return redirect(
+                    f"/system?restore_msg={quote_plus(str(exc))}"
+                    "&restore_ok=0"
+                )
+
+        return redirect(
+            "/system?restore_msg=No+backup+file+selected"
+            "&restore_ok=0"
+        )
 
     @app.route("/services/restart/<name>", methods=["POST"])
     def restart_service(name):

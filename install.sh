@@ -110,6 +110,9 @@ chown -R root:root /opt/showcontroller
 find /opt/showcontroller -type d -exec chmod 755 {} \;
 find /opt/showcontroller -type f -exec chmod 644 {} \;
 
+# Authentication data contains the password hash and Flask secret key.
+chmod 600 /opt/showcontroller/auth.json 2>/dev/null || true
+
 chmod +x /opt/showcontroller/install.sh
 chmod +x /opt/showcontroller/update.sh 2>/dev/null || true
 chmod +x /opt/showcontroller/modules/video_player/tv_boot_cec.sh 2>/dev/null || true
@@ -125,13 +128,33 @@ cp /opt/showcontroller/systemd/showcontroller-tv-boot-cec.service /etc/systemd/s
 systemctl daemon-reload
 
 systemctl enable showcontroller-web
-systemctl enable showcontroller-gpio
 
 echo
 echo "Starting services..."
 
 systemctl restart showcontroller-web
-systemctl restart showcontroller-gpio
+
+echo "Applying configured node mode..."
+
+if ! (cd /opt/showcontroller && python3 - <<'PY'
+from services.node_mode import (
+    ensure_current_node_mode_available,
+    get_current_node_mode,
+    switch_node_mode,
+)
+
+mode = get_current_node_mode()
+ok, error = switch_node_mode(mode)
+
+if not ok:
+    ok, error = ensure_current_node_mode_available()
+
+if not ok:
+    raise SystemExit(error)
+PY
+); then
+    echo "No enabled node mode could be started"
+fi
 
 echo
 echo "======================================="
