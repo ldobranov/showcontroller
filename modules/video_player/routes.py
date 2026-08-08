@@ -3,6 +3,7 @@ from pathlib import Path
 from flask import redirect, request
 from werkzeug.utils import secure_filename
 from services.modules import module_required
+from services.node_mode import get_current_node_mode
 from logger import log
 
 import json
@@ -91,8 +92,30 @@ def safe_int(value, default, min_value=None, max_value=None):
 
 
 def restart_video_service():
-    subprocess.Popen(["sudo", "systemctl", "restart", "showcontroller-video-node.service"])
+    current_mode = get_current_node_mode()
+    video_mode = MODULE.get("runtime", {}).get("mode", "video")
 
+    if current_mode != video_mode:
+        log(
+            f"VIDEOS restart skipped: "
+            f"current node mode is {current_mode}, not {video_mode}"
+        )
+        return False
+
+    service = MODULE.get("runtime", {}).get("service")
+
+    if not service:
+        log("VIDEOS restart skipped: module runtime service is not configured")
+        return False
+
+    subprocess.Popen(
+        ["sudo", "systemctl", "restart", service],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+
+    log(f"VIDEOS restart requested: {service}")
+    return True
 
 def vlc_read(command, timeout=0.8):
     try:
