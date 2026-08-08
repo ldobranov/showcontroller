@@ -117,6 +117,7 @@ echo "Installing systemd services..."
 
 cp /opt/showcontroller/systemd/showcontroller-web.service /etc/systemd/system/
 cp /opt/showcontroller/systemd/showcontroller-gpio.service /etc/systemd/system/
+cp /opt/showcontroller/systemd/showcontroller-video-node.service /etc/systemd/system/ 
 cp /opt/showcontroller/systemd/showcontroller-tv-boot-cec.service /etc/systemd/system/ 2>/dev/null || true
 
 systemctl daemon-reload

@@ -3,6 +3,7 @@ import re
 import socket
 import subprocess
 import time
+import os
 from pathlib import Path
 
 from gpiozero import DigitalInputDevice

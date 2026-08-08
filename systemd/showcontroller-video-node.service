@@ -1,0 +1,16 @@
+[Unit]
+Description=ShowController Video Node
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=simple
+User=root
+Group=root
+WorkingDirectory=/opt/showcontroller
+ExecStart=/usr/bin/python3 /opt/showcontroller/modules/video_player/node.py
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target
