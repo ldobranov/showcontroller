@@ -33,9 +33,9 @@ def video_default_config():
         "active_low": False,
         "pullup": True,
         "sensor2_enabled": False,
-        "sensor2_gpio_pin": 27,
+        "sensor2_gpio": 27,
         "sensor2_active_low": False,
-        "sensor2_pull_up": True,
+        "sensor2_pullup": True,
         "active_threshold": 0.3,
         "idle_threshold": 2.0,
         "audio_device": "hdmi:CARD=vc4hdmi,DEV=0",
@@ -247,9 +247,9 @@ def register_video_routes(app, render_page):
         cfg["active_low"] = request.form.get("active_low") == "on"
         cfg["pullup"] = request.form.get("pullup") == "on"
         cfg["sensor2_enabled"] = request.form.get("sensor2_enabled") == "on"
-        cfg["sensor2_gpio_pin"] = int(request.form.get("sensor2_gpio_pin", 27))
+        cfg["sensor2_gpio"] = int(request.form.get("sensor2_gpio", 27))
         cfg["sensor2_active_low"] = request.form.get("sensor2_active_low") == "on"
-        cfg["sensor2_pull_up"] = request.form.get("sensor2_pull_up") == "on"
+        cfg["sensor2_pullup"] = request.form.get("sensor2_pullup") == "on"
         cfg["active_threshold"] = float(request.form.get("active_threshold", 0.3))
         cfg["idle_threshold"] = float(request.form.get("idle_threshold", 2.0))
         cfg["audio_device"] = request.form.get(

@@ -171,7 +171,9 @@ def start_vlc():
     playlist = build_playlist()
 
     cmd = [
-        "cvlc",
+        "/usr/bin/vlc",
+        "-I",
+        "dummy",
         "--fullscreen",
         "--no-video-title-show",
         "--quiet",
