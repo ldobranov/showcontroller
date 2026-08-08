@@ -1,5 +1,17 @@
 # Changelog
 
+## v1.4.1
+
+- Added automated regression tests for backup/restore validation, Node Mode switching, module manifests, required templates and systemd units, version consistency, and OTA update safeguards.
+- Added a single regression test runner with Python compilation and shell syntax checks.
+- Changed OTA updates to accept only verified fast-forward commits from `origin/main`.
+- Added pre-install validation in an isolated candidate tree before any live files are changed.
+- Added an update lock to prevent concurrent OTA installations.
+- Added a complete pre-update installation snapshot and automatic rollback after installation or health-check failure.
+- Moved OTA execution into an independent transient systemd unit so restarting the web service cannot interrupt the update.
+- Added post-update service and HTTP health checks.
+- Persisted OTA progress and completion status across web-service restarts.
+
 ## v1.4.0
 
 - Introduced a unified premium visual system across the web interface.

@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -e
+set -Eeuo pipefail
 
 echo "======================================="
 echo " ShowController Updater"
@@ -16,6 +16,8 @@ fi
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 chmod +x "$SCRIPT_DIR/install.sh" 2>/dev/null || true
 chmod +x "$SCRIPT_DIR/update.sh" 2>/dev/null || true
+chmod +x "$SCRIPT_DIR/scripts/run_tests.sh" 2>/dev/null || true
+chmod +x "$SCRIPT_DIR/scripts/safe_update.sh" 2>/dev/null || true
 chmod +x "$SCRIPT_DIR/modules/video_player/tv_boot_cec.sh" 2>/dev/null || true
 
 echo

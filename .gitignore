@@ -9,6 +9,7 @@ auth.json
 events.log
 state.json
 gpio.reload
+config/update_status.json
 *.tmp
 .lgd-nfy*
 
