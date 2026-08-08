@@ -262,15 +262,15 @@ def register_video_routes(app, render_page):
             0,
             300,
         )
-        cfg["cec_enabled"] = request.form.get("cec_enabled") == "off"
-        cfg["cec_boot_enabled"] = request.form.get("cec_boot_enabled") == "off"
+        cfg["cec_enabled"] = request.form.get("cec_enabled") == "on"
+        cfg["cec_boot_enabled"] = request.form.get("cec_boot_enabled") == "on"
         cfg["cec_boot_delay"] = safe_int(
             request.form.get("cec_boot_delay", cfg.get("cec_boot_delay", 60)),
             60,
             0,
             300,
         )
-        cfg["cec_boot_select_source"] = request.form.get("cec_boot_select_source") == "off"
+        cfg["cec_boot_select_source"] = request.form.get("cec_boot_select_source") == "on"
 
         video_save_config(cfg)
         log("VIDEOS config saved")
