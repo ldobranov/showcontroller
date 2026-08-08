@@ -10,18 +10,39 @@
   </div>
 
   <form method="post" action="/videos/save">
-    <div class="grid-3">
+
+    <div class="grid-2">
       <div>
         <label>ID</label>
         <input type="text" name="id" value="{{ video_cfg.id }}">
       </div>
+
       <div>
         <label>Name</label>
         <input type="text" name="name" value="{{ video_cfg.name }}">
       </div>
+    </div>
+
+    <div class="grid-2">
       <div>
-        <label>GPIO</label>
+        <label>Sensor 1 GPIO</label>
         <input type="number" name="gpio" value="{{ video_cfg.gpio }}">
+      </div>
+
+      <div>
+        <label>Sensor 2</label>
+
+        <label>
+          <input type="checkbox"
+                 name="sensor2_enabled"
+                 {% if video_cfg.sensor2_enabled %}checked{% endif %}>
+          Enable second sensor
+        </label>
+
+        <input
+            type="number"
+            name="sensor2_gpio"
+            value="{{ video_cfg.sensor2_gpio or 27 }}">
       </div>
     </div>
 
@@ -57,53 +78,139 @@
 
       <div>
         <label>Active lock seconds</label>
-        <input type="number" name="active_lock_seconds" value="{{ video_cfg.active_lock_seconds }}" min="0" max="300">
-        <p class="muted">Minimum time before returning from main video to idle.</p>
+        <input
+            type="number"
+            name="active_lock_seconds"
+            value="{{ video_cfg.active_lock_seconds }}"
+            min="0"
+            max="300">
+        <p class="muted">
+          Minimum time before returning from main video to idle.
+        </p>
       </div>
     </div>
 
     <div class="grid-2">
       <div>
-        <label>Options</label>
-
-        <label>
-          <input type="checkbox" name="active_low" {% if video_cfg.active_low %}checked{% endif %}>
-          Active low sensor
-        </label>
-
-        <label>
-          <input type="checkbox" name="pullup" {% if video_cfg.get('pullup', True) %}checked{% endif %}>
-          Use internal pull-up resistor
-        </label>
-
-        <label>
-          <input type="checkbox" name="cec_enabled" {% if video_cfg.cec_enabled %}checked{% endif %}>
-          Enable HDMI CEC control
-        </label>
+        <label>Active threshold (seconds)</label>
+        <input
+            type="number"
+            step="0.1"
+            min="0"
+            max="30"
+            name="active_threshold"
+            value="{{ video_cfg.active_threshold or 0.3 }}">
+        <p class="muted">
+          Sensor must stay active this long before playback starts.
+        </p>
       </div>
 
       <div>
+        <label>Idle threshold (seconds)</label>
+        <input
+            type="number"
+            step="0.1"
+            min="0"
+            max="30"
+            name="idle_threshold"
+            value="{{ video_cfg.idle_threshold or 2.0 }}">
+        <p class="muted">
+          Sensor must stay idle this long before idle media is restored.
+        </p>
+      </div>
+    </div>
+
+    <div class="grid-2">
+
+      <div>
+        <label>Sensor options</label>
+
+        <label>
+          <input
+              type="checkbox"
+              name="active_low"
+              {% if video_cfg.active_low %}checked{% endif %}>
+          Sensor 1 active low
+        </label>
+
+        <label>
+          <input
+              type="checkbox"
+              name="pullup"
+              {% if video_cfg.get('pullup', True) %}checked{% endif %}>
+          Sensor 1 internal pull-up
+        </label>
+
+        <label>
+          <input
+              type="checkbox"
+              name="sensor2_active_low"
+              {% if video_cfg.sensor2_active_low %}checked{% endif %}>
+          Sensor 2 active low
+        </label>
+
+        <label>
+          <input
+              type="checkbox"
+              name="sensor2_pullup"
+              {% if video_cfg.sensor2_pullup %}checked{% endif %}>
+          Sensor 2 internal pull-up
+        </label>
+
+        <label>
+          <input
+              type="checkbox"
+              name="cec_enabled"
+              {% if video_cfg.cec_enabled %}checked{% endif %}>
+          Enable HDMI CEC control
+        </label>
+
+      </div>
+
+      <div>
+
         <label>Boot HDMI CEC</label>
 
         <label>
-          <input type="checkbox" name="cec_boot_enabled" {% if video_cfg.cec_boot_enabled %}checked{% endif %}>
+          <input
+              type="checkbox"
+              name="cec_boot_enabled"
+              {% if video_cfg.cec_boot_enabled %}checked{% endif %}>
           TV on once after Raspberry boot
         </label>
 
         <label>
-          <input type="checkbox" name="cec_boot_select_source" {% if video_cfg.cec_boot_select_source %}checked{% endif %}>
+          <input
+              type="checkbox"
+              name="cec_boot_select_source"
+              {% if video_cfg.cec_boot_select_source %}checked{% endif %}>
           Select HDMI at boot
         </label>
 
         <label>Boot CEC delay seconds</label>
-        <input type="number" name="cec_boot_delay" value="{{ video_cfg.cec_boot_delay }}" min="0" max="300">
-        <p class="muted">Works only after installing Video Player dependencies from System. TCL Android TV should usually keep Select HDMI off.</p>
+
+        <input
+            type="number"
+            name="cec_boot_delay"
+            value="{{ video_cfg.cec_boot_delay }}"
+            min="0"
+            max="300">
+
+        <p class="muted">
+          Works only after installing Video Player dependencies from System.
+          TCL Android TV should usually keep Select HDMI off.
+        </p>
+
       </div>
+
     </div>
 
     <div class="actions">
-      <button type="submit" class="primary">Save and restart player</button>
+      <button type="submit" class="primary">
+        Save and restart player
+      </button>
     </div>
+
   </form>
 </div>
 
@@ -113,40 +220,82 @@
     <form method="post" action="/videos/play" class="inline-form">
       <button type="submit" class="primary">Play main</button>
     </form>
+
     <form method="post" action="/videos/idle" class="inline-form">
       <button type="submit">Show idle</button>
     </form>
+
     <form method="post" action="/videos/restart" class="inline-form">
       <button type="submit">Restart video node</button>
     </form>
   </div>
 </div>
 
-
 <div class="card">
   <h2>Upload media</h2>
-  <form method="post" action="/videos/upload" enctype="multipart/form-data">
-    <input type="file" name="media_file" accept=".mp4,.jpg,.jpeg">
-    <button type="submit" class="primary">Upload</button>
+
+  <form
+      method="post"
+      action="/videos/upload"
+      enctype="multipart/form-data">
+
+    <input
+        type="file"
+        name="media_file"
+        accept=".mp4,.jpg,.jpeg">
+
+    <button
+        type="submit"
+        class="primary">
+      Upload
+    </button>
+
   </form>
 </div>
 
 <div class="card">
+
   <h2>Media files</h2>
 
   {% if video_files %}
+
     {% for f in video_files %}
+
       <div class="file-row">
+
         <code>{{ f }}</code>
-        <form method="post" action="/videos/delete" onsubmit="return confirm('Delete this file?');" class="inline-form">
-          <input type="hidden" name="path" value="{{ f }}">
-          <button type="submit" class="danger compact">Delete</button>
+
+        <form
+            method="post"
+            action="/videos/delete"
+            onsubmit="return confirm('Delete this file?');"
+            class="inline-form">
+
+          <input
+              type="hidden"
+              name="path"
+              value="{{ f }}">
+
+          <button
+              type="submit"
+              class="danger compact">
+            Delete
+          </button>
+
         </form>
+
       </div>
+
     {% endfor %}
+
   {% else %}
-    <p class="muted">No media files found.</p>
+
+    <p class="muted">
+      No media files found.
+    </p>
+
   {% endif %}
+
 </div>
 
 {% endblock %}
