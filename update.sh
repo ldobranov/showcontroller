@@ -56,6 +56,48 @@ chown root:root /opt/showcontroller/version.json 2>/dev/null || true
 chmod 644 /opt/showcontroller/version.json
 
 echo
+echo "Syncing and updating main config.json during update..."
+python3 -c "
+import json, os
+
+src_default = '$SCRIPT_DIR/config.default.json'
+dest_config = '/opt/showcontroller/config.json'
+
+if not os.path.exists(dest_config):
+    if os.path.exists(src_default):
+        with open(src_default, 'r') as f:
+            data = json.load(f)
+        with open(dest_config, 'w') as f:
+            json.dump(data, f, indent=2)
+        print('Created missing config.json from template.')
+else:
+    with open(src_default, 'r') as f:
+        default = json.load(f)
+    with open(dest_config, 'r') as f:
+        current = json.load(f)
+    
+    updated = False
+    for key, value in default.items():
+        if key not in current:
+            current[key] = value
+            updated = True
+        elif isinstance(value, dict) and isinstance(current[key], dict):
+            for sub_key, sub_value in value.items():
+                if sub_key not in current[key]:
+                    current[key][sub_key] = sub_value
+                    updated = True
+                    
+    if 'version' in default and current.get('version') != default['version']:
+        current['version'] = default['version']
+        updated = True
+        
+    if updated:
+        with open(dest_config, 'w') as f:
+            json.dump(current, f, indent=2)
+        print('Successfully merged new keys into existing config.json.')
+"
+
+echo
 echo "Setting permissions..."
 
 # Keep application code root-owned. Runtime services use their own working directories.
@@ -73,7 +115,6 @@ echo "Reloading systemd..."
 
 cp systemd/showcontroller-web.service /etc/systemd/system/
 cp systemd/showcontroller-gpio.service /etc/systemd/system/
-cp systemd/showcontroller-video-node.service /etc/systemd/system/ 2>/dev/null || true
 cp systemd/showcontroller-tv-boot-cec.service /etc/systemd/system/ 2>/dev/null || true
 
 systemctl daemon-reload
@@ -87,11 +128,13 @@ ACTIVE_NODE_SERVICE="$(cd /opt/showcontroller && python3 - <<'PY'
 from services.node_mode import get_current_node_mode
 from services.modules import get_node_runtime
 
-mode = get_current_node_mode()
-runtime = get_node_runtime(mode, enabled_only=True)
-
-if runtime and runtime.get("service"):
-    print(runtime["service"])
+try:
+    mode = get_current_node_mode()
+    runtime = get_node_runtime(mode, enabled_only=True)
+    if runtime and runtime.get("service"):
+        print(runtime["service"])
+except Exception:
+    pass
 PY
 )"
 

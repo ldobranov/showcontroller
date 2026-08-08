@@ -11,7 +11,7 @@ import re
 import socket
 import subprocess
 
-
+os.makedirs('/home/raspberry/videos', exist_ok=True)
 VIDEO_CONFIG = "/opt/showcontroller/config/video.json"
 VIDEO_MEDIA_DIR = "/home/raspberry/videos"
 ALLOWED_VIDEO_EXT = {".mp4", ".jpg", ".jpeg"}
