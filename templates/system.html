@@ -3,179 +3,162 @@
 
 <section class="panel">
   <h2>System Management</h2>
-  <p class="muted">Core system configuration, modules management, and lifecycle controls.</p>
+  <p class="muted">Modules, runtime modes, backups and core lifecycle controls.</p>
 </section>
 
 {% if request.args.get("module_msg") %}
 <section class="panel">
-  {% if request.args.get("module_ok") == "1" %}
-    <span class="badge ok">SUCCESS</span>
-  {% else %}
-    <span class="badge err">ERROR</span>
-  {% endif %}
+  <span class="badge {% if request.args.get('module_ok') == '1' %}ok{% else %}err{% endif %}">
+    {% if request.args.get("module_ok") == "1" %}SUCCESS{% else %}ERROR{% endif %}
+  </span>
   <strong>{{ request.args.get("module_msg") }}</strong>
 </section>
 {% endif %}
 
 {% if request.args.get("restore_msg") %}
 <section class="panel">
-  {% if request.args.get("restore_ok") == "1" %}
-    <span class="badge ok">SUCCESS</span>
-  {% else %}
-    <span class="badge err">ERROR</span>
-  {% endif %}
+  <span class="badge {% if request.args.get('restore_ok') == '1' %}ok{% else %}err{% endif %}">
+    {% if request.args.get("restore_ok") == "1" %}SUCCESS{% else %}ERROR{% endif %}
+  </span>
   <strong>{{ request.args.get("restore_msg") }}</strong>
 </section>
 {% endif %}
 
 <section class="grid">
-
-  <!-- CARD 1: MODULES MANAGEMENT -->
   <div class="panel">
-    <h3>Application Modules</h3>
-    <p class="muted" style="margin-bottom: 15px;">Enable or disable system features and verify runtime dependencies.</p>
+    <div class="card-header">
+      <div>
+        <h3>Application Modules</h3>
+        <p class="muted">Enable features and verify their dependencies.</p>
+      </div>
+    </div>
 
     <form id="modules-form" method="post" action="/system/modules"></form>
 
     {% for mod in available_modules %}
-      <div style="background: rgba(0,0,0,0.02); padding: 12px; border-radius: 6px; margin-bottom: 12px; border: 1px solid rgba(0,0,0,0.04);">
-        <div class="row" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 5px;">
-          <label style="cursor: pointer; display: flex; align-items: center; gap: 8px;">
+      <div class="module-item">
+        <div class="module-heading">
+          <label>
             <input type="checkbox"
                    form="modules-form"
                    name="{{ mod.key }}"
                    {% if mod.enabled %}checked{% endif %}>
             <strong>{{ mod.name }}</strong>
-            {% if mod.version %}
-              <span class="muted" style="font-size: 0.85rem;">v{{ mod.version }}</span>
-            {% endif %}
+            {% if mod.version %}<span class="muted">v{{ mod.version }}</span>{% endif %}
           </label>
 
-          {% if mod.dependencies_ok %}
-            <span class="badge ok">deps ok</span>
-          {% else %}
-            <span class="badge err">missing deps</span>
-          {% endif %}
+          <span class="badge {% if mod.dependencies_ok %}ok{% else %}err{% endif %}">
+            {% if mod.dependencies_ok %}deps ok{% else %}missing deps{% endif %}
+          </span>
         </div>
 
-        {% if mod.description %}
-          <p class="muted" style="margin: 4px 0 0 0; font-size: 0.9rem;">{{ mod.description }}</p>
-        {% endif %}
-
-        {% if mod.apt_packages %}
-          <p class="muted" style="margin: 6px 0 0 0; font-size: 0.8rem; font-family: monospace;">Packages: {{ mod.apt_packages | join(", ") }}</p>
-        {% endif %}
-
-        {% if mod.dependency_error %}
-          <p class="muted" style="margin: 6px 0 0 0; font-size: 0.85rem; color: #dc3545;">Error: {{ mod.dependency_error }}</p>
-        {% endif %}
+        {% if mod.description %}<p class="module-meta">{{ mod.description }}</p>{% endif %}
+        {% if mod.apt_packages %}<p class="module-meta">Packages: <code>{{ mod.apt_packages | join(", ") }}</code></p>{% endif %}
+        {% if mod.dependency_error %}<p class="module-meta danger">{{ mod.dependency_error }}</p>{% endif %}
 
         {% if mod.missing_packages %}
-          <form method="post" action="/system/modules/{{ mod.key }}/install-dependencies" style="margin-top: 8px;">
-            <button type="submit" style="width: 100%;">Install module dependencies</button>
+          <form method="post" action="/system/modules/{{ mod.key }}/install-dependencies" class="actions">
+            <button type="submit">Install dependencies</button>
           </form>
         {% endif %}
       </div>
     {% endfor %}
 
-    <button form="modules-form" class="primary" type="submit" style="width: 100%; margin-top: 10px;">
-      Save Modules Configuration
-    </button>
+    <button form="modules-form" class="primary full" type="submit">Save module configuration</button>
   </div>
 
-  <!-- CARD 2: NODE CONTROL & POWER -->
-  <div class="panel" style="display: flex; flex-direction: column; justify-content: space-between;">
-    <div>
-      <h3>Node Control</h3>
-      <p class="muted" style="margin-bottom: 15px;">Switch between available operation modes for the controller hardware.</p>
-
-      {% if node_modes %}
-        <div style="display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 15px;">
-          {% for mode in node_modes %}
-            <form method="post" action="/system/mode/{{ mode.mode }}" style="display:block;">
-              <button type="submit" style="width: 100%;" {% if current_node_mode == mode.mode %}class="primary"{% endif %}>
-                {{ mode.label or mode.mode }}
-              </button>
-            </form>
-          {% endfor %}
-        </div>
-      {% else %}
-        <p class="muted" style="font-style: italic;">No node modes available. Enable a module with node runtime.</p>
-      {% endif %}
-    </div>
-
-    <div style="border-top: 1px solid rgba(0,0,0,0.08); padding-top: 15px; margin-top: 20px;">
-      <h4 style="margin: 0 0 10px 0; font-size: 1rem;">Power & Maintenance</h4>
-      
-      <form method="post" action="/services/restart/web" onsubmit="return confirm('Restart Web Server? UI will disconnect temporarily.');">
-        <button type="submit" style="width: 100%; background-color: #ffc107; color: #212529; border: none; margin-bottom: 8px;">Restart WEB Service</button>
-      </form>
-
-      <form method="post" action="/system/reboot" onsubmit="return confirm('Are you sure you want to REBOOT the entire system hardware?');">
-        <button type="submit" style="width: 100%; background-color: #dc3545; color: white; border: none; margin-bottom: 15px;">Reboot Hardware</button>
-      </form>
-
-      <a href="/settings" style="text-decoration: none;">
-        <button type="button" style="width: 100%;">Global Settings</button>
-      </a>
-    </div>
-  </div>
-
-  <!-- CARD 3: BACKUP & RESTORE -->
   <div class="panel">
-    <h3>Backup / Restore</h3>
-    <p class="muted" style="margin-bottom: 15px;">Export current setup or upload a previous system snapshot deployment file.</p>
-
-    <a href="/backup/config" style="text-decoration: none;">
-      <button type="button" style="width: 100%; background-color: #28a745; color: white; border: none; margin-bottom: 20px;">Download System Backup</button>
-    </a>
-
-    <div style="border-top: 1px solid rgba(0,0,0,0.08); padding-top: 15px;">
-      <h4 style="margin: 0 0 10px 0; font-size: 1rem;">Upload System Backup</h4>
-      <form method="post" action="/restore/config" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 10px;">
-        <input type="file" name="config_file" accept=".zip" style="padding: 5px; background: rgba(0,0,0,0.01); border: 1px dashed rgba(0,0,0,0.1); border-radius: 4px;">
-        <button type="submit" style="width: 100%;" onclick="return confirm('Restore this backup? A reboot will be required before the restored configuration is fully applied.');">Restore system backup (.zip)</button>
-      </form>
-    </div>
-  </div>
-
-  <!-- CARD 4: OVER-THE-AIR UPGRADE -->
-  <div class="panel" style="display: flex; flex-direction: column; justify-content: space-between;">
-    <div>
-      <h3>OTA Core Updates</h3>
-      <p class="muted" style="margin-bottom: 15px;">Check for production updates and synchronize core modules with GitHub repository.</p>
-
-      <div style="background: rgba(0,0,0,0.02); padding: 12px; border-radius: 6px; margin-bottom: 15px;">
-        <p style="margin: 0 0 8px 0;">Current Core Version: <strong style="color: #007bff;">v{{ update.version or version }}</strong></p>
-
-        {% if update.message %}
-          <p style="margin: 5px 0; font-size: 0.95rem;">{{ update.message }}</p>
-
-          {% if update.installed or update.remote %}
-            <div class="muted" style="font-size: 0.85rem; font-family: monospace; margin-top: 8px; border-top: 1px solid rgba(0,0,0,0.04); padding-top: 6px;">
-              Local Build: {{ update.installed or "-" }}<br>
-              Latest Build: {{ update.remote or "-" }}
-            </div>
-          {% endif %}
-        {% endif %}
+    <div class="card-header">
+      <div>
+        <h3>Node Control</h3>
+        <p class="muted">Choose the active hardware runtime.</p>
       </div>
     </div>
 
-    <div style="display: flex; flex-direction: column; gap: 8px; margin-top: 15px;">
+    {% if node_modes %}
+      <div class="stack">
+        {% for mode in node_modes %}
+          <form method="post" action="/system/mode/{{ mode.mode }}">
+            <button type="submit" class="full {% if current_node_mode == mode.mode %}primary{% endif %}">
+              {{ mode.label or mode.mode }}
+            </button>
+          </form>
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="muted">No node modes available. Enable a module with a node runtime.</p>
+    {% endif %}
+
+    <div class="subsection">
+      <h4>Power &amp; Maintenance</h4>
+      <div class="stack actions">
+        <form method="post" action="/services/restart/web" onsubmit="return confirm('Restart Web Server? UI will disconnect temporarily.');">
+          <button type="submit" class="warning full">Restart WEB service</button>
+        </form>
+        <form method="post" action="/system/reboot" onsubmit="return confirm('Are you sure you want to REBOOT the entire system hardware?');">
+          <button type="submit" class="danger full">Reboot hardware</button>
+        </form>
+        <a href="/settings" class="button full">Global settings</a>
+      </div>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="card-header">
+      <div>
+        <h3>Backup &amp; Restore</h3>
+        <p class="muted">Export or restore a complete system snapshot.</p>
+      </div>
+    </div>
+
+    <a href="/backup/config" class="button primary full">Download system backup</a>
+
+    <div class="subsection">
+      <h4>Restore snapshot</h4>
+      <form method="post" action="/restore/config" enctype="multipart/form-data">
+        <input type="file" name="config_file" accept=".zip">
+        <button type="submit" class="full" onclick="return confirm('Restore this backup? A reboot will be required before the restored configuration is fully applied.');">
+          Restore system backup
+        </button>
+      </form>
+    </div>
+  </div>
+
+  <div class="panel">
+    <div class="card-header">
+      <div>
+        <h3>Core Updates</h3>
+        <p class="muted">Check and synchronize production releases.</p>
+      </div>
+    </div>
+
+    <div class="version-block">
+      <div class="muted">Current Core Version</div>
+      <div class="version-number">v{{ update.version or version }}</div>
+
+      {% if update.message %}
+        <p>{{ update.message }}</p>
+        {% if update.installed or update.remote %}
+          <p class="module-meta">
+            Local: <code>{{ update.installed or "-" }}</code><br>
+            Latest: <code>{{ update.remote or "-" }}</code>
+          </p>
+        {% endif %}
+      {% endif %}
+    </div>
+
+    <div class="stack actions">
       <form method="post" action="/system/check-updates">
-        <button type="submit" style="width: 100%;">Check for Updates</button>
+        <button type="submit" class="full">Check for updates</button>
       </form>
 
       {% if update.update_available %}
         <form method="post" action="/system/install-update" onsubmit="return confirm('Execute system upgrade now?');">
-          <button class="primary" type="submit" style="width: 100%; font-weight: bold; background-color: #007bff; color: white; border: none;">
-            Update Core to Latest
-          </button>
+          <button class="primary full" type="submit">Update core now</button>
         </form>
       {% endif %}
     </div>
   </div>
-
 </section>
 
 {% endblock %}

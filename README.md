@@ -1,4 +1,4 @@
-# ShowController v1.3.9
+# ShowController v1.4.0
 
 A modular Raspberry Pi controller for GPIO, Video Playback and interactive installations.
 
@@ -163,7 +163,7 @@ showcontroller/
 
 # Current Version
 
-**v1.3.9**
+**v1.4.0**
 
 ### Highlights
 

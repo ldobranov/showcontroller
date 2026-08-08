@@ -1,9 +1,8 @@
 import json
 import os
 import secrets
-from functools import wraps
 
-from flask import redirect, request, session, url_for
+from flask import session
 from werkzeug.security import check_password_hash, generate_password_hash
 
 AUTH_FILE = "/opt/showcontroller/auth.json"
@@ -113,13 +112,3 @@ def change_password(current_password, new_password):
 
 def default_password_active():
     return bool(load_auth().get("default_password_active", False))
-
-
-def login_required(view):
-    @wraps(view)
-    def wrapped(*args, **kwargs):
-        if is_logged_in():
-            return view(*args, **kwargs)
-        return redirect(url_for("login", next=request.path))
-
-    return wrapped

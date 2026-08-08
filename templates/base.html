@@ -12,7 +12,13 @@
   <main class="page">
   <header class="topbar">
     <div class="brand-row">
-      <div class="brand-title">{{ cfg.name }}</div>
+      <div class="brand-lockup">
+        <div class="brand-mark">SC</div>
+        <div>
+          <div class="brand-title">{{ cfg.name }}</div>
+          <div class="brand-kicker">Control system</div>
+        </div>
+      </div>
       {% if auth_enabled %}
         <div class="user-area">
           <span>User: <b>{{ auth_user }}</b></span>

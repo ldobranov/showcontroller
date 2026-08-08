@@ -1,5 +1,16 @@
 # Changelog
 
+## v1.4.0
+
+- Introduced a unified premium visual system across the web interface.
+- Added a redesigned header, navigation, status strip, panels, forms, buttons, badges, and log views.
+- Rebuilt the System page with consistent module, node mode, backup, maintenance, and update controls.
+- Refined the Login, Settings, and Logs pages to match the new application design.
+- Added responsive layouts and mobile navigation for phones and tablets.
+- Improved visual hierarchy, spacing, typography, focus states, and status feedback.
+- Removed obsolete authentication, state, and service-management helpers left by earlier refactors.
+- Removed unused imports while preserving all active modules, installers, systemd units, and examples.
+
 ## v1.3.9
 
 - Fixed Dashboard reporting for GPIO and Video runtime services.

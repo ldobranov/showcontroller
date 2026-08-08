@@ -66,11 +66,6 @@ def load_state():
         return _read_state_unlocked()
 
 
-def save_state(data):
-    with _state_lock():
-        _write_state_unlocked(data)
-
-
 def _update_state(mutator):
     """Atomically read, mutate, and write the state under a single lock."""
     with _state_lock():
@@ -104,14 +99,6 @@ def reset_input(input_name):
     set_input_index(input_name, 0)
 
 
-def set_input_pressed(input_name, pressed):
-    def mutate(data):
-        item = ensure_input(data, input_name)
-        item["pressed"] = pressed
-
-    _update_state(mutate)
-
-
 def set_input_event(input_name, pressed, event):
     def mutate(data):
         item = ensure_input(data, input_name)
@@ -126,11 +113,6 @@ def set_input_event(input_name, pressed, event):
             item["release_count"] = int(item.get("release_count", 0)) + 1
 
     _update_state(mutate)
-
-
-def get_input_pressed(input_name):
-    data = load_state()
-    return data.get("inputs", {}).get(input_name, {}).get("pressed", False)
 
 
 def get_input_runtime(input_name):

@@ -7,10 +7,15 @@
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
 </head>
 <body>
-  <main class="page" style="max-width: 460px; padding-top: 70px;">
-    <div class="card">
-      <h1>{{ cfg.name }}</h1>
-      <p class="muted">Sign in to manage this controller.</p>
+  <main class="login-shell">
+    <div class="card login-card">
+      <div class="login-brand">
+        <div class="brand-mark">SC</div>
+        <div>
+          <h1>{{ cfg.name }}</h1>
+          <p class="muted">ShowController management console</p>
+        </div>
+      </div>
 
       {% if error %}
         <p class="danger">{{ error }}</p>
@@ -23,7 +28,7 @@
         <label>Password</label>
         <input type="password" name="password" autocomplete="current-password">
 
-        <button type="submit" class="primary">Login</button>
+        <button type="submit" class="primary">Sign in</button>
       </form>
 
       <p class="muted">Default credentials: admin / showcontroller</p>

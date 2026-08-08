@@ -1,10 +1,15 @@
 {% extends "base.html" %}
 {% block content %}
-  <div class="box">
-    <h2>Logs</h2>
-    <form method="post" action="/logs/clear">
-      <button type="submit">CLEAR LOG</button>
-    </form>
+  <div class="panel">
+    <div class="card-header">
+      <div>
+        <h2>Event Log</h2>
+        <p class="muted">Recent controller and runtime activity.</p>
+      </div>
+      <form method="post" action="/logs/clear">
+        <button type="submit">Clear log</button>
+      </form>
+    </div>
     <pre>{% for l in logs %}{{ l }}
 {% endfor %}</pre>
   </div>

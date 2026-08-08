@@ -7,9 +7,6 @@ from functools import wraps
 from flask import abort
 from pathlib import Path
 
-from logger import log
-
-
 MODULES_FILE = "/opt/showcontroller/modules.json"
 
 BASE_DIR = Path(__file__).resolve().parents[1]

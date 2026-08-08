@@ -7,7 +7,7 @@ import engine
 from config import load_config, CONFIG_FILE
 from logger import log
 from paths import GPIO_RELOAD_FILE
-from state import set_input_event, set_input_pressed
+from state import set_input_event
 
 buttons = []
 

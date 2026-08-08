@@ -3,7 +3,6 @@ import platform
 import shutil
 import subprocess
 import sys
-import time
 
 from flask import jsonify
 
