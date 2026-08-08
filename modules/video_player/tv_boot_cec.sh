@@ -94,7 +94,7 @@ if [ ! -f "$CONFIG" ]; then
     exit 0
 fi
 
-boot_enabled="$(read_json_bool "$CONFIG" "cec_boot_enabled" "true")"
+boot_enabled="$(read_json_bool "$CONFIG" "cec_boot_enabled" "false")"
 select_source="$(read_json_bool "$CONFIG" "cec_boot_select_source" "false")"
 delay_seconds="$(read_json_int "$CONFIG" "cec_boot_delay" "60")"
 

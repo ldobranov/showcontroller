@@ -51,6 +51,9 @@ rsync -av --delete \
     --exclude "state.json" \
     --exclude "gpio.reload" \
     --exclude "modules.json" \
+    --exclude "config/video.json" \
+    --exclude "config/node_mode.json" \
+    --exclude "config/video_deps_installed" \
     ./ /opt/showcontroller/
 
 echo
@@ -93,16 +96,15 @@ else:
 echo
 echo "Preparing runtime files..."
 
-# Both showcontroller-web and showcontroller-gpio run as root, so runtime
-# state/config/lock files must be owned and writable by root to avoid the
-# GPIO service crashing on permission-denied.
+# Core runtime state files are maintained under /opt/showcontroller.
 touch /opt/showcontroller/events.log
 [ -f /opt/showcontroller/state.json ] || echo '{"inputs":{}}' > /opt/showcontroller/state.json
 
 echo
 echo "Setting permissions..."
 
-# Application directory is owned by root (services run as root).
+# Keep application code root-owned.
+# Runtime services use their own users and writable runtime directories.
 chown -R root:root /opt/showcontroller
 
 find /opt/showcontroller -type d -exec chmod 755 {} \;

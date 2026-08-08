@@ -106,7 +106,7 @@ def register_system_routes(app, render_page):
         return send_file(
             config_backup_path(),
             as_attachment=True,
-            download_name="showcontroller-config.json",
+            download_name="showcontroller-backup.zip",
         )
 
     @app.route("/restore/config", methods=["POST"])
@@ -124,6 +124,7 @@ def register_system_routes(app, render_page):
     @app.route("/services/restart/<name>", methods=["POST"])
     def restart_service(name):
         service = None
+        runtime_mode = None
 
         if name == "web":
             service = "showcontroller-web.service"
@@ -149,14 +150,27 @@ def register_system_routes(app, render_page):
 
                 if name in aliases:
                     service = runtime_service
+                    runtime_mode = runtime.get("mode")
                     break
 
         if not service:
             log(f"SERVICE restart ignored, unknown service alias: {name}")
             return redirect("/system")
 
+        if runtime_mode:
+            current_mode = get_current_node_mode()
+
+            if current_mode != runtime_mode:
+                log(
+                    f"SERVICE restart skipped: "
+                    f"{runtime_mode} is not active node mode "
+                    f"(current={current_mode})"
+                )
+                return redirect("/system")
+
         log(f"SERVICE restart requested: {service}")
         system_restart_service(service)
+
         return redirect("/system")
 
     @app.route("/system/reboot", methods=["POST"])

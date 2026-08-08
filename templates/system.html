@@ -116,14 +116,14 @@
     <p class="muted" style="margin-bottom: 15px;">Export current setup or upload a previous system snapshot deployment file.</p>
 
     <a href="/backup/config" style="text-decoration: none;">
-      <button type="button" style="width: 100%; background-color: #28a745; color: white; border: none; margin-bottom: 20px;">Download Configuration JSON</button>
+      <button type="button" style="width: 100%; background-color: #28a745; color: white; border: none; margin-bottom: 20px;">Download System Backup</button>
     </a>
 
     <div style="border-top: 1px solid rgba(0,0,0,0.08); padding-top: 15px;">
       <h4 style="margin: 0 0 10px 0; font-size: 1rem;">Upload System Backup</h4>
       <form method="post" action="/restore/config" enctype="multipart/form-data" style="display: flex; flex-direction: column; gap: 10px;">
-        <input type="file" name="config_file" accept=".json" style="padding: 5px; background: rgba(0,0,0,0.01); border: 1px dashed rgba(0,0,0,0.1); border-radius: 4px;">
-        <button type="submit" style="width: 100%;">Restore Config File</button>
+        <input type="file" name="config_file" accept=".zip" style="padding: 5px; background: rgba(0,0,0,0.01); border: 1px dashed rgba(0,0,0,0.1); border-radius: 4px;">
+        <button type="submit" style="width: 100%;">Restore system backup (.zip)</button>
       </form>
     </div>
   </div>

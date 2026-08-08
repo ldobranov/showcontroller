@@ -1,5 +1,21 @@
 # Changelog
 
+## v1.3.8
+
+- Added optional second sensor for Video Player.
+- Added Active threshold and Idle threshold.
+- Kept Active lock as independent playback protection.
+- Fixed Video Player GPIO/VLC runtime permissions.
+- Fixed Video Player restart to respect Node Mode.
+- Fixed GPIO restart to respect Node Mode.
+- Fixed generic service restart to respect Node Mode.
+- Added validation for Video Player GPIO and threshold settings.
+- Added protection against duplicate GPIO use for Sensor 1 and Sensor 2.
+- Changed HDMI CEC boot default to disabled.
+- Improved Dashboard and Diagnostics runtime service reporting.
+- Preserved runtime configuration files during reinstall/update.
+- Expanded Backup/Restore to include system runtime configuration.
+
 ## v1.3.7
 
 - Added paired_sequence mode for legacy Arduino-style UDP installations.

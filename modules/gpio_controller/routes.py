@@ -5,6 +5,7 @@ from logger import log
 from services.service_manager import restart_service as system_restart_service
 from services.modules import module_required
 from config import load_config, save_config
+from services.node_mode import get_current_node_mode
 
 import engine
 
@@ -102,8 +103,16 @@ def register_gpio_routes(app, render_page):
         return redirect("/triggers")
 
     @app.route("/gpio/restart", methods=["POST"])
-    @module_required(MODULE["key"])
-    def gpio_restart_service():
-        log("GPIO restart requested from gpio page")
+    def restart_gpio():
+        current_mode = get_current_node_mode()
+
+        if current_mode != "gpio":
+            log(
+                f"GPIO restart skipped: "
+                f"current node mode is {current_mode}, not gpio"
+            )
+            return redirect("/triggers")
+
         system_restart_service("showcontroller-gpio")
+        log("GPIO restart requested")
         return redirect("/triggers")

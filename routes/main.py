@@ -1,9 +1,8 @@
 from flask import redirect, request
 
 from logger import clear_logs, get_logs
-from services.modules import enabled_modules_info, enabled_module_services
 from services.service_manager import service_status
-
+from services.modules import enabled_modules_info, enabled_module_services, node_runtimes
 
 def register_main_routes(app, render_page):
     def get_dashboard_modules():
@@ -22,6 +21,16 @@ def register_main_routes(app, render_page):
                 "key": item["key"],
                 "name": item["name"],
                 "services": services_by_module.get(item["key"], []),
+            })
+        for runtime in node_runtimes(enabled_only=True):
+            service = runtime.get("service")
+
+            if not service:
+                continue
+
+            services_by_module.setdefault(runtime["module_key"], []).append({
+                "name": service,
+                "status": service_status(service),
             })
 
         return modules

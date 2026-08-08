@@ -11,7 +11,7 @@ from logger import get_logs
 from routes.system import get_ip
 from services import eventbus
 from services.service_manager import service_status
-from services.modules import enabled_module_services
+from services.modules import enabled_module_services, node_runtimes
 
 def read_first_line(path, default="unknown"):
     try:
@@ -140,6 +140,19 @@ def get_core_services():
 
         services.append({
             "name": item["module_name"],
+            "service": service_name,
+            "status": service_status(service_name),
+            "type": "module",
+        })
+
+    for runtime in node_runtimes(enabled_only=True):
+        service_name = runtime.get("service")
+
+        if not service_name:
+            continue
+
+        services.append({
+            "name": runtime.get("module_name", runtime.get("label", runtime.get("mode", "Node"))),
             "service": service_name,
             "status": service_status(service_name),
             "type": "module",
