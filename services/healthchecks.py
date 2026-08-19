@@ -65,3 +65,16 @@ def send_heartbeat(timeout=DEFAULT_TIMEOUT_SECONDS):
 
     except Exception as exc:
         return False, f"Healthchecks heartbeat failed: {exc}"
+        
+def main():
+    ok, message = send_heartbeat()
+
+    if not ok:
+        print(message, flush=True)
+        return 1
+
+    return 0
+
+
+if __name__ == "__main__":
+    raise SystemExit(main())
