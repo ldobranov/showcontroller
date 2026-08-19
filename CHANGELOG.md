@@ -1,4 +1,13 @@
 # Changelog
+## v1.4.2
+
+- Added optional Healthchecks.io heartbeat monitoring for each ShowController device.
+- Added per-device Healthchecks Ping URL and enable/disable controls in Settings.
+- Added manual heartbeat testing from the web interface.
+- Added URL validation restricted to HTTPS Healthchecks.io ping endpoints.
+- Added an independent systemd oneshot service and 60-second timer for heartbeats.
+- Added automatic Healthchecks timer installation and activation during install and OTA updates.
+- Added regression tests for URL validation, disabled monitoring, invalid configuration, successful heartbeat delivery, and service exit status.
 
 ## v1.4.1
 
