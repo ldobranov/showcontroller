@@ -122,8 +122,13 @@ cp systemd/showcontroller-web.service /etc/systemd/system/
 cp systemd/showcontroller-gpio.service /etc/systemd/system/
 cp systemd/showcontroller-video-node.service /etc/systemd/system/ 2>/dev/null || true
 cp systemd/showcontroller-tv-boot-cec.service /etc/systemd/system/ 2>/dev/null || true
+cp systemd/showcontroller-healthcheck.service /etc/systemd/system/
+cp systemd/showcontroller-healthcheck.timer /etc/systemd/system/
 
 systemctl daemon-reload
+
+systemctl enable showcontroller-healthcheck.timer
+systemctl restart showcontroller-healthcheck.timer
 
 echo
 echo "Restarting services..."
