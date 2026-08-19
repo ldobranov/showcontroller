@@ -8,8 +8,8 @@
     "port": 8891
   },
   "healthchecks": {
-  "enabled": false,
-  "ping_url": ""
+    "enabled": false,
+    "ping_url": ""
   },
   "modules": {
     "gpio_controller": {
