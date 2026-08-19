@@ -124,15 +124,21 @@ cp /opt/showcontroller/systemd/showcontroller-web.service /etc/systemd/system/
 cp /opt/showcontroller/systemd/showcontroller-gpio.service /etc/systemd/system/
 cp /opt/showcontroller/systemd/showcontroller-video-node.service /etc/systemd/system/ 
 cp /opt/showcontroller/systemd/showcontroller-tv-boot-cec.service /etc/systemd/system/ 2>/dev/null || true
+cp /opt/showcontroller/systemd/showcontroller-healthcheck.service /etc/systemd/system/
+cp /opt/showcontroller/systemd/showcontroller-healthcheck.timer /etc/systemd/system/
 
 systemctl daemon-reload
 
 systemctl enable showcontroller-web
 
+systemctl enable showcontroller-healthcheck.timer
+
 echo
 echo "Starting services..."
 
 systemctl restart showcontroller-web
+
+systemctl restart showcontroller-healthcheck.timer
 
 echo "Applying configured node mode..."
 

@@ -1,0 +1,10 @@
+[Unit]
+Description=ShowController Healthchecks Heartbeat
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=root
+WorkingDirectory=/opt/showcontroller
+ExecStart=/usr/bin/python3 -m services.healthchecks

@@ -1,0 +1,12 @@
+[Unit]
+Description=ShowController Healthchecks Heartbeat Timer
+
+[Timer]
+OnBootSec=60
+OnUnitActiveSec=60
+AccuracySec=5
+Persistent=true
+Unit=showcontroller-healthcheck.service
+
+[Install]
+WantedBy=timers.target

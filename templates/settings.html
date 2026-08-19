@@ -17,6 +17,49 @@
     </form>
   </div>
 
+  <div class="panel">
+    <h2>External Monitoring</h2>
+    <p class="muted">
+      Send a heartbeat from this device to Healthchecks.io.
+      Use a unique Ping URL for each ShowController device.
+    </p>
+
+    {% if request.args.get("hc_msg") %}
+      <p class="{% if request.args.get('hc_ok') == '1' %}ok{% else %}danger{% endif %}">
+        {{ request.args.get("hc_msg") }}
+      </p>
+    {% endif %}
+
+    {% set hc = cfg.get("healthchecks", {}) %}
+
+    <form method="post" action="/settings/healthchecks/save">
+      <label>
+        <input class="inline-checkbox"
+               type="checkbox"
+               name="healthchecks_enabled"
+               {% if hc.get("enabled", False) %}checked{% endif %}>
+        Enable Healthchecks.io heartbeat
+      </label>
+
+      <label>Ping URL</label>
+      <input
+        type="url"
+        name="healthchecks_ping_url"
+        value="{{ hc.get('ping_url', '') }}"
+        placeholder="https://hc-ping.com/xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
+        autocomplete="off">
+
+      <button type="submit" class="primary">Save monitoring settings</button>
+    </form>
+
+    {% if hc.get("enabled", False) and hc.get("ping_url", "") %}
+      <form method="post"
+            action="/settings/healthchecks/test"
+            class="actions">
+        <button type="submit">Test heartbeat</button>
+      </form>
+    {% endif %}
+  </div>
 
   <div class="panel">
     <h2>Authentication</h2>
