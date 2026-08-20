@@ -1,3 +1,4 @@
+import os
 import json
 import unittest
 from pathlib import Path
@@ -51,6 +52,11 @@ class ProjectSmokeTests(unittest.TestCase):
         )
         self.assertIn('git -c "safe.directory=$REPO_DIR"', script)
         self.assertNotIn("git config --global", script)
+
+    def test_ota_scripts_are_executable(self):
+        for name in ("run_tests.sh", "safe_update.sh"):
+            path = ROOT / "scripts" / name
+            self.assertTrue(os.access(path, os.X_OK), name)
 
 
 if __name__ == "__main__":
