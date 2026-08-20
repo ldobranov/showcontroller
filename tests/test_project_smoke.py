@@ -45,6 +45,13 @@ class ProjectSmokeTests(unittest.TestCase):
         ):
             self.assertTrue((ROOT / "systemd" / name).is_file(), name)
 
+    def test_safe_update_scopes_git_ownership_override(self):
+        script = (ROOT / "scripts" / "safe_update.sh").read_text(
+            encoding="utf-8"
+        )
+        self.assertIn('git -c "safe.directory=$REPO_DIR"', script)
+        self.assertNotIn("git config --global", script)
+
 
 if __name__ == "__main__":
     unittest.main()

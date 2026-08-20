@@ -45,7 +45,7 @@ def start_safe_update(target):
             "--collect",
             "--no-block",
             "/bin/bash",
-            "./scripts/safe_update.sh",
+            os.path.join(REPO_DIR, "scripts", "safe_update.sh"),
             target,
         ],
         cwd=REPO_DIR,

@@ -10,6 +10,10 @@ SNAPSHOT_DIR=""
 PREVIOUS_COMMIT=""
 UPDATE_STARTED=0
 
+git_repo() {
+    git -c "safe.directory=$REPO_DIR" -C "$REPO_DIR" "$@"
+}
+
 write_status() {
     local ok="$1"
     local message="$2"
@@ -43,7 +47,7 @@ rollback() {
         echo "Update failed; restoring the previous installation."
         rsync -a --delete "$SNAPSHOT_DIR/installed/" /opt/showcontroller/ || true
         if [ -n "$PREVIOUS_COMMIT" ]; then
-            git -C "$REPO_DIR" reset --hard "$PREVIOUS_COMMIT" || true
+            git_repo reset --hard "$PREVIOUS_COMMIT" || true
         fi
         cp /opt/showcontroller/systemd/*.service /etc/systemd/system/ 2>/dev/null || true
         systemctl daemon-reload || true
@@ -97,27 +101,26 @@ if [[ ! "$TARGET_COMMIT" =~ ^[0-9a-fA-F]{40}$ ]]; then
     exit 1
 fi
 
-cd "$REPO_DIR"
-git diff --quiet && git diff --cached --quiet || {
+git_repo diff --quiet && git_repo diff --cached --quiet || {
     echo "Update refused because the repository has local changes." >&2
     exit 1
 }
 
-REMOTE_COMMIT="$(git rev-parse origin/main)"
+REMOTE_COMMIT="$(git_repo rev-parse origin/main)"
 [ "$TARGET_COMMIT" = "$REMOTE_COMMIT" ] || {
     echo "Update target no longer matches origin/main; check again." >&2
     exit 1
 }
 
-PREVIOUS_COMMIT="$(git rev-parse HEAD)"
-git merge-base --is-ancestor "$PREVIOUS_COMMIT" "$TARGET_COMMIT" || {
+PREVIOUS_COMMIT="$(git_repo rev-parse HEAD)"
+git_repo merge-base --is-ancestor "$PREVIOUS_COMMIT" "$TARGET_COMMIT" || {
     echo "Update refused because it is not a fast-forward." >&2
     exit 1
 }
 
 write_status true "Validating update before installation." validating
 CANDIDATE_DIR="$(mktemp -d /tmp/showcontroller-candidate.XXXXXX)"
-git archive "$TARGET_COMMIT" | tar -x -C "$CANDIDATE_DIR"
+git_repo archive "$TARGET_COMMIT" | tar -x -C "$CANDIDATE_DIR"
 bash "$CANDIDATE_DIR/scripts/run_tests.sh"
 
 SNAPSHOT_DIR="$(mktemp -d /var/tmp/showcontroller-rollback.XXXXXX)"
@@ -126,7 +129,7 @@ cp -a /opt/showcontroller/. "$SNAPSHOT_DIR/installed/"
 
 write_status true "Installing validated update." installing
 UPDATE_STARTED=1
-git reset --hard "$TARGET_COMMIT"
+git_repo reset --hard "$TARGET_COMMIT"
 bash "$REPO_DIR/update.sh"
 
 health_check

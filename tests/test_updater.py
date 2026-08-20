@@ -1,3 +1,4 @@
+import os
 import unittest
 from unittest.mock import MagicMock, patch
 
@@ -5,6 +6,19 @@ from services import updater
 
 
 class UpdaterTests(unittest.TestCase):
+    @patch.object(updater.subprocess, "run")
+    def test_safe_update_uses_absolute_script_path(self, run):
+        run.return_value = MagicMock(returncode=0)
+
+        updater.start_safe_update("b" * 40)
+
+        command = run.call_args.args[0]
+        self.assertIn(
+            os.path.join(updater.REPO_DIR, "scripts", "safe_update.sh"),
+            command,
+        )
+        self.assertNotIn("./scripts/safe_update.sh", command)
+
     @patch.object(updater, "set_last_update_status")
     @patch.object(updater, "start_safe_update")
     @patch.object(updater, "open", create=True)
